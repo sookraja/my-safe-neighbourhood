@@ -131,7 +131,7 @@ const LandingPage: React.FC = () => {
               </form>
               
               <div className="mt-6 text-center">
-                <p className="text-gray-600 mb-4">{/* eslint-disable-next-line react/no-unescaped-entities */}Don't have an account?</p>
+                <p className="text-gray-600 mb-4">Don&#39;t have an account?</p>
                 <button
                   onClick={() => window.location.href = '/signup'}
                   className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium border-2 border-gray-200 hover:border-gray-300"
