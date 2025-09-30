@@ -9,7 +9,8 @@ const Navigation: React.FC = () => {
           <button className="text-gray-600 hover:text-blue-600 transition-colors">
             Dashboard
           </button>
-          <button className="text-gray-600 hover:text-blue-600 transition-colors">
+          <button  onClick={() => window.location.href = '/about'}
+            className="text-gray-600 hover:text-blue-600 transition-colors">
             About Us
           </button>
           <button className="text-gray-600 hover:text-blue-600 transition-colors">
