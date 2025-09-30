@@ -2,14 +2,26 @@
 
 import React, { useState } from 'react';
 import Navigation from './Navigation';
+import { getFirestore } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
+import app from "../../firebase/firebase";
+
+const db = getFirestore(app);
 
 const SignUpPage: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [id, setId] = useState("");
+  const [name, setUsernamem] = useState("");
+  const [password_hash, setPassHash] = useState("");
+  const [role, setRole] = useState("");
   const [form, setForm] = useState({
     email: '',
     username: '',
     password: '',
     confirmPassword: ''
-  });
+  }
+);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +29,16 @@ const SignUpPage: React.FC = () => {
       alert('Passwords do not match!');
       return;
     }
+    
+    setForm(form);
+    setEmail(form.email);
+    setId("1");                                 // TO-DO: implement unique id
+    setUsernamem(form.username);
+    setPassHash(form.password);                 // TO-DO: implement hash value?
+    setRole("default");                         // TO-DO: not sure what "role" value should be set to
+
+    addDoc(collection(db, "Users"), {email, id, name, password_hash, role});
+
     alert('Registration successful!');
     // Here you would typically redirect to dashboard or login
     // Here blend you should be able to redirect to the incident/dashboard page after login
