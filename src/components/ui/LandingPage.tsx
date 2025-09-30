@@ -3,7 +3,13 @@
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
 import Navigation from './Navigation';
-import MapComponent from './MapComponent';
+import dynamic from 'next/dynamic';
+
+const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] bg-gray-200 rounded-lg flex items-center justify-center">Loading map...</div>
+});
+
 
 // Mock data for incidents to be used later on if needed
 const mockIncidents = [
@@ -59,7 +65,12 @@ const LandingPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Real-time neighborhood safety updates</p>
               </div>
               <div className="h-full">
-                <MapComponent incidents={mockIncidents} />
+                <RealMapComponent 
+                  incidents={mockIncidents}
+                  height="400px"
+                  center={[40.7128, -74.0060]}
+                  zoom={12}
+                />
               </div>
             </div>
             {/*cards */}
