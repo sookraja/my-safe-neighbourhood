@@ -28,13 +28,13 @@ const Firestore = () => {
             <center>
                 <form style={{ marginTop: "200px" }}
                     onSubmit={(event) => { sub(event) }}>
-                    <input type="text" placeholder="your name"
+                    <input type="text" placeholder="city/area"
                         onChange={(e) => { Setlocation(e.target.value) }} />
                     <br /><br />
-                    <input type="number" placeholder="your age"
+                    <input type="number" placeholder="type of incident"
                         onChange={(e) => { Setincidenttype(e.target.value) }} />
                     <br /><br />
-                    <input type="text" placeholder="Course Enrolled"
+                    <input type="text" placeholder="description"
                         onChange={(e) => { Setdescription(e.target.value) }} />
                     <br /><br />
                     <button type="submit">Submit</button>
