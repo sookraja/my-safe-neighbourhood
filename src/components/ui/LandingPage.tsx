@@ -11,7 +11,7 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
 });
 
 
-// Mock data for incidents to be used later on if needed
+// Mock data
 const mockIncidents = [
   {
     id: 1,
