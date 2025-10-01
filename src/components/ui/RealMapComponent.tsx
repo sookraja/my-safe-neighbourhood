@@ -172,10 +172,10 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           className="rounded-lg"
-          zoomControl={true} // Enable zoom controls
-          scrollWheelZoom={true} // Enable mouse wheel zoom
-          doubleClickZoom={true} // Enable double-click zoom
-          touchZoom={true} // Enable touch zoom on mobile
+          zoomControl={true} 
+          scrollWheelZoom={true} 
+          doubleClickZoom={true} 
+          touchZoom={true} 
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
