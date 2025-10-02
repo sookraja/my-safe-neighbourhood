@@ -6,6 +6,8 @@ import Firestore from "./postIncidents";
 
 const db = getFirestore(app);
 
+//const PAGE_SIZE = 10;
+
 type Incident = {
   location: string;
   incidentType: string;
