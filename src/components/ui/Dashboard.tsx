@@ -10,7 +10,7 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   loading: () => <div className="h-[300px] bg-gray-200 rounded-lg flex items-center justify-center"></div>
 });
 
-// Random Mock data I found
+// Random Mock data 
 const mockIncidents = [
   {
     id: 1,
@@ -181,7 +181,7 @@ const Dashboard: React.FC = () => {
               <div className="h-64">
                <RealMapComponent 
                   incidents={mockIncidents}
-                  height="340px"
+                  height="260px"
                   center={[40.7128, -74.0060]}
                   zoom={12}
                 />
