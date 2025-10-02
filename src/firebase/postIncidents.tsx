@@ -31,7 +31,7 @@ const Firestore = () => {
                     <input type="text" placeholder="city/area"
                         onChange={(e) => { Setlocation(e.target.value) }} />
                     <br /><br />
-                    <input type="number" placeholder="type of incident"
+                    <input type="text" placeholder="type of incident"
                         onChange={(e) => { Setincidenttype(e.target.value) }} />
                     <br /><br />
                     <input type="text" placeholder="description"
