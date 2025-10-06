@@ -16,7 +16,7 @@ const AboutUs: React.FC = () => {
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Empowering communities through transparency, collaboration, and real-time safety awareness. 
-            Together, we're building safer neighborhoods one report at a time.
+            Together, we&#39;re building safer neighborhoods one report at a time.
           </p>
         </div>
 
