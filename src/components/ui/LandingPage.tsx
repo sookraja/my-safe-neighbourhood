@@ -62,21 +62,30 @@ const LandingPage: React.FC = () => {
     setError('');
     setIsLoading(true);
 
-    try {
-      await signIn(loginForm.email, loginForm.password);
-      // Router will redirect via useEffect
-    } catch (err: any) {
-      console.error('Login error:', err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else {
-        setError('Failed to sign in. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+try {
+  await signIn(loginForm.email, loginForm.password);
+  // Router redirect via useEffect
+} catch (err: unknown) {
+  console.error('Login error:', err);
+
+  // Narrow unknown down to FirebaseAuthError-like object
+  if (err && typeof err === 'object' && 'code' in err) {
+    const errorObj = err as { code?: string };
+
+    if (errorObj.code === 'auth/user-not-found' || errorObj.code === 'auth/wrong-password') {
+      setError('Invalid email or password');
+    } else if (errorObj.code === 'auth/invalid-email') {
+      setError('Invalid email address');
+    } else {
+      setError('Failed to sign in. Please try again.');
     }
+  } else {
+    setError('Failed to sign in. Please try again.');
+  }
+} finally {
+  setIsLoading(false);
+}
+
   };
 
   return (
