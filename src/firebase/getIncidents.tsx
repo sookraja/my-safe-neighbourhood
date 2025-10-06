@@ -15,7 +15,7 @@ type Incident = {
 };
 
 const Read = () => {
-    const [info, setInfo] = useState<any[]>([]);
+    const [info, setInfo] = useState<Incident[]>([]);
 
     // Start the fetch operation as soon as
     // the page loads
@@ -26,9 +26,9 @@ const Read = () => {
     // Fetch the required data using the get() method
     const Fetchdata = async () => {
         const querySnapshot = await getDocs(collection(db, "data"));
-        const newData: any[] = [];
+        const newData: Incident[] = [];
         querySnapshot.forEach((doc) => {
-            newData.push(doc.data() as any[]);
+            newData.push(doc.data() as Incident);
         });
         setInfo(newData);
     };
@@ -40,11 +40,12 @@ const Read = () => {
                 <h2>Incident Details</h2>
             </center>
 
-            {info.map((data) => (
+            {info.map((data, index) => (
                 <Frame
-                    location={data.CourseEnrolled}
-                    incidentType={data.Nane}
-                    description={data.Age}
+                    key={index}
+                    location={data.location}
+                    incidentType={data.incidentType}
+                    description={data.description}
                 />
             ))}
         </div>

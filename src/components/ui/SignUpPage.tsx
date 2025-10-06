@@ -34,22 +34,33 @@ const SignUpPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signUp(form.email, form.password);
-      router.push('/dashboard');
-    } catch (err: any) {
-      console.error('Signup error:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Email already in use');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password is too weak');
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
+        await signUp(form.email, form.password);
+        router.push('/dashboard');
+        } catch (err: unknown) {
+            console.error('Signup error:', err);
+
+            if (err && typeof err === 'object' && 'code' in err) {
+                const errorObj = err as { code?: string };
+
+                switch (errorObj.code) {
+                case 'auth/email-already-in-use':
+                    setError('Email already in use');
+                    break;
+                case 'auth/invalid-email':
+                    setError('Invalid email address');
+                    break;
+                case 'auth/weak-password':
+                    setError('Password is too weak');
+                    break;
+                default:
+                    setError('Failed to create account. Please try again.');
+                }
+            } else {
+                setError('Failed to create account. Please try again.');
+            }
+        } finally {
+        setIsLoading(false);
+        }
   };
 
   return (
