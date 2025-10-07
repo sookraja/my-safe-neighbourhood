@@ -1,6 +1,5 @@
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, validatePassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import app from "./firebase";
-
 
 const auth = getAuth(app);
 
@@ -30,13 +29,4 @@ export const logOut = async () => {
   }
 };
 
-const status = await validatePassword(getAuth(), "some-pass");
-if (!status.isValid) {
-  // Password could not be validated. Use the status to show what
-  // requirements are met and which are missing.
-
-  // If a criterion is undefined, it is not required by policy. If the
-  // criterion is defined but false, it is required but not fulfilled by
-  // the given password. For example:
-  const needsLowerCase = status.containsLowercaseLetter !== true;
-}
+export { auth };
