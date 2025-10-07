@@ -3,9 +3,14 @@
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import Navigation from './Navigation';
-import MapComponent from './MapComponent';
+import dynamic from 'next/dynamic';
 
-// Random Mock data I found
+const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
+  ssr: false,
+  loading: () => <div className="h-[300px] bg-gray-200 rounded-lg flex items-center justify-center"></div>
+});
+
+// Random Mock data 
 const mockIncidents = [
   {
     id: 1,
@@ -97,10 +102,9 @@ const Dashboard: React.FC = () => {
     incident.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleReportIncident = () => {
-    // Navigate to report incident page - implement routing later
-    alert('Navigate to report incident page - implement routing later!');
-  };
+ const handleReportIncident = () => {
+  window.location.href = '/report';
+};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -175,10 +179,11 @@ const Dashboard: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Incident Locations</h3>
               <div className="h-64">
-                <MapComponent 
-                  incidents={filteredIncidents} 
-                  selectedIncident={selectedIncident}
-                  onIncidentSelect={setSelectedIncident}
+               <RealMapComponent 
+                  incidents={mockIncidents}
+                  height="260px"
+                  center={[40.7128, -74.0060]}
+                  zoom={12}
                 />
               </div>
             </div>
