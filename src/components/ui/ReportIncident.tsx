@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { Upload, MapPin } from 'lucide-react';
 import Navigation from './Navigation';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/context/AuthContext';
+import { addIncident } from '@/firebase/incidents';
+import { useRouter } from 'next/navigation';
 
 const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ssr: false,
@@ -19,8 +22,14 @@ const ReportIncident: React.FC = () => {
     title: '',
     type: 'Robbery',
     location: '',
-    description: ''
+    description: '',
+    lat: 40.7128,
+    lng: -74.0060
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
+  const router = useRouter();
 
   const incidentTypes = [
     'Robbery',
@@ -35,21 +44,58 @@ const ReportIncident: React.FC = () => {
     'Other'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (!form.title || !form.location || !form.description) {
-      alert('Please fill in all required fields');
+      setError('Please fill in all required fields');
       return;
     }
-    
-    alert('Incident reported successfully! Thank you for helping keep our neighborhood safe.');
-    
-    setForm({
-      title: '',
-      type: 'Robbery',
-      location: '',
-      description: ''
-    });
+
+    if (!user) {
+      setError('You must be logged in to report an incident');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const now = new Date();
+      const dateTime = now.toISOString().slice(0, 19).replace('T', ' ');
+
+      await addIncident({
+        title: form.title,
+        type: form.type,
+        address: form.location,
+        description: form.description,
+        lat: form.lat,
+        lng: form.lng,
+        reportedBy: user.email || 'Anonymous',
+        dateTime: dateTime,
+        userId: user.uid,
+      });
+
+      alert('Incident reported successfully! Thank you for helping keep our neighborhood safe.');
+      
+      // Resets the form
+      setForm({
+        title: '',
+        type: 'Robbery',
+        location: '',
+        description: '',
+        lat: 40.7128,
+        lng: -74.0060
+      });
+
+      // Redirect to dashboard after you have submitted your incident
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Error submitting incident:', err);
+      setError('Failed to submit incident. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUpload = () => {
@@ -57,7 +103,7 @@ const ReportIncident: React.FC = () => {
   };
 
   const handleLocationSelect = (address: string, lat: number, lng: number) => {
-    setForm(prev => ({ ...prev, location: address }));
+    setForm(prev => ({ ...prev, location: address, lat, lng }));
   };
 
   return (
@@ -67,12 +113,18 @@ const ReportIncident: React.FC = () => {
       <div className="container mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Report An Incident</h1>
         
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+        
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Incident Title *
+                  Incident Title 
                 </label>
                 <input
                   type="text"
@@ -82,10 +134,10 @@ const ReportIncident: React.FC = () => {
                   value={form.title}
                   onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               
-           
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Incident Type
@@ -95,6 +147,7 @@ const ReportIncident: React.FC = () => {
                   style={{ color: '#000000' }}
                   value={form.type}
                   onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
+                  disabled={isSubmitting}
                 >
                   {incidentTypes.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -116,6 +169,7 @@ const ReportIncident: React.FC = () => {
                     value={form.location}
                     onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
@@ -124,8 +178,8 @@ const ReportIncident: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Description *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description 
                 </label>
                 <textarea
                   placeholder="Describe the incident in detail. Include time, people involved, and any other relevant information."
@@ -135,6 +189,7 @@ const ReportIncident: React.FC = () => {
                   value={form.description}
                   onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                   required
+                  disabled={isSubmitting}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Minimum 20 characters. Be specific but avoid personal information.
@@ -144,14 +199,16 @@ const ReportIncident: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit Report
+                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
                 </button>
                 <button
                   type="button"
                   onClick={handleUpload}
-                  className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Photo
@@ -164,6 +221,7 @@ const ReportIncident: React.FC = () => {
                     type="checkbox"
                     id="anonymous"
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    disabled={isSubmitting}
                   />
                   <label htmlFor="anonymous" className="text-sm text-gray-700">
                     Submit anonymously
@@ -175,6 +233,7 @@ const ReportIncident: React.FC = () => {
                     id="updates"
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     defaultChecked
+                    disabled={isSubmitting}
                   />
                   <label htmlFor="updates" className="text-sm text-gray-700">
                     Receive updates about this incident
@@ -182,7 +241,6 @@ const ReportIncident: React.FC = () => {
                 </div>
               </div>
               
-              {/* Safety Notice */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex">
                   <div className="text-yellow-600 mr-3">⚠️</div>
@@ -198,9 +256,8 @@ const ReportIncident: React.FC = () => {
             </form>
           </div>
 
-          {/* Map Section - Right Side */}
+          {/* Map  */}
           <div className="space-y-6">
-            {/* Interactive Map with Search */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Select Location</h3>
               <div className="mb-3">
@@ -216,10 +273,11 @@ const ReportIncident: React.FC = () => {
                 center={[40.7128, -74.0060]}
                 zoom={13}
               />
-              
+              <p className="text-xs text-gray-500 mt-2">
+                The selected location will automatically fill in the location field above.
+              </p>
             </div>
 
-            {/* Recent Incidents Nearby */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Recent Incidents Nearby</h3>
               <div className="space-y-2">
@@ -257,8 +315,7 @@ const ReportIncident: React.FC = () => {
                 </p>
               </div>
             </div>
-
-            {/* Quick Tips */}
+            
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">Reporting Tips</h4>
               <ul className="text-sm text-blue-800 space-y-1">
