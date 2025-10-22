@@ -71,6 +71,11 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   const [mapZoom, setMapZoom] = useState(zoom);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
+  React.useEffect(() => {
+    setMapCenter(center);
+    setMapZoom(zoom);
+  }, [center, zoom]);
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
