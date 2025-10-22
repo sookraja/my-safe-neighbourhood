@@ -26,9 +26,39 @@ const Dashboard: React.FC = () => {
   const [votingIncidentId, setVotingIncidentId] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
+  const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied'>('loading');
 
   useEffect(() => {
     loadIncidents();
+  }, []);
+
+
+  useEffect(() => {
+    const requestLocation = () => {
+      if (!navigator.geolocation) {
+        setLocationStatus('denied');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setLocationStatus('allowed');
+        },
+        (error) => {
+          console.log('Location denied or error:', error);
+          setLocationStatus('denied');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    };
+
+    requestLocation();
   }, []);
 
   const loadIncidents = async () => {
@@ -304,8 +334,8 @@ const Dashboard: React.FC = () => {
                 selectedIncident={selectedIncident}
                 onIncidentSelect={setSelectedIncident}
                 height="300px"
-                center={[40.7128, -74.0060]}
-                zoom={12}
+                center={userLocation}  
+                zoom={locationStatus === 'allowed' ? 15 : 12} 
               />
               <p className="text-xs text-gray-500 mt-2">
                 Click on markers to view incident details
