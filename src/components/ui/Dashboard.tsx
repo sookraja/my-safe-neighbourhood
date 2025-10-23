@@ -17,6 +17,15 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ),
 });
 
+const distanceLimitForReports = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+ 
+  const latitudeDifference = lat2 - lat1;
+  const longitudeDifference = lon2 - lon1;
+  const distance = Math.sqrt(latitudeDifference * latitudeDifference + longitudeDifference* longitudeDifference) * 111;
+  
+  return distance;
+};
+
 const Dashboard: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
@@ -140,12 +149,24 @@ const Dashboard: React.FC = () => {
     return { text: 'Questionable', color: 'bg-red-100 text-red-800' };
   };
 
-  const filteredIncidents = incidents.filter(incident =>
+  const filteredIncidents = incidents.filter(incident => {
+  const matchesSearch = 
     incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     incident.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    incident.reportedBy.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    incident.reportedBy.toLowerCase().includes(searchTerm.toLowerCase());
+  
+  if (locationStatus === 'allowed') {
+    const distance = distanceLimitForReports(
+      userLocation[0],
+      userLocation[1],
+      incident.lat,
+      incident.lng  
+    );
+    return matchesSearch && distance <= 25; //this is will limit searches in a 25km radius
+  }
+  return matchesSearch;
+});
 
   const handleReportIncident = () => {
     router.push('/report');
@@ -338,7 +359,7 @@ const Dashboard: React.FC = () => {
                 zoom={locationStatus === 'allowed' ? 15 : 12} 
               />
               <p className="text-xs text-gray-500 mt-2">
-                Click on markers to view incident details
+                Click on markers to view details
               </p>
             </div>
 
