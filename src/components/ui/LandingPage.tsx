@@ -137,6 +137,17 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const EnableLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setLocationStatus('allowed');
+        },
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <Navigation />
@@ -168,6 +179,7 @@ const LandingPage: React.FC = () => {
                   )}
                 </div>
               </div>
+
               <div className="h-[400px]">
                 <RealMapComponent 
                   incidents={mockIncidents}
