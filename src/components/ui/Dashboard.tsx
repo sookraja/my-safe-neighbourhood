@@ -101,11 +101,15 @@ const Dashboard: React.FC = () => {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to upvote incident');
-    } finally {
-      setVotingIncidentId(null);
-    }
+    } catch (err: unknown) {
+  if (err instanceof Error) {
+    alert(err.message);
+  } else {
+    alert('Failed to upvote incident');
+  }
+} finally {
+  setVotingIncidentId(null);
+}
   };
 
   const handleDownvote = async (incidentId: string, e: React.MouseEvent) => {
@@ -125,8 +129,12 @@ const Dashboard: React.FC = () => {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to downvote incident');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Failed to downvote incident');
+      }
     } finally {
       setVotingIncidentId(null);
     }
