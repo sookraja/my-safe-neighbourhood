@@ -17,8 +17,6 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ),
 });
 
-
-// Mock data for incidents to be used later on if needed
 const mockIncidents = [
   {
     id: '1',
@@ -170,7 +168,6 @@ const LandingPage: React.FC = () => {
                   )}
                 </div>
               </div>
-
               <div className="h-[400px]">
                 <RealMapComponent 
                   incidents={mockIncidents}
@@ -261,7 +258,7 @@ const LandingPage: React.FC = () => {
               </form>
               
               <div className="mt-6 text-center">
-                <p className="text-gray-600 mb-4">Don&#39;t have an account?</p>
+                <p className="text-gray-600 mb-4">Don't have an account?</p>
                 <button
                   onClick={() => router.push('/signup')}
                   className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium border-2 border-gray-200 hover:border-gray-300"
