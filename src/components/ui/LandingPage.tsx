@@ -135,6 +135,13 @@ const LandingPage: React.FC = () => {
         },
       );
     }
+  } else {
+    setError('An unexpected error occurred.');
+  }
+} finally {
+  setIsLoading(false);
+}
+
   };
 
   const EnableLocation = () => {
