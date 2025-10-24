@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'MySafeNeighbourhood',
   webDir: 'out', 
   server: {
-    url: 'https://my-safe-neighbourhood-git-annette-annettes-projects-a6b8faf0.vercel.app',
+    url: 'https://my-safe-neighbourhood.vercel.app/',
     cleartext: false,
-    allowNavigation: ['my-safe-neighbourhood-git-annette-annettes-projects-a6b8faf0.vercel.app'],
+    allowNavigation: ['https://my-safe-neighbourhood.vercel.app/'],
   },
   ios: {
     contentInset: 'always',
