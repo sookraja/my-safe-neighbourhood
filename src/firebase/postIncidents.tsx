@@ -44,4 +44,8 @@ const Firestore = () => {
     );
 }
 
+<<<<<<< HEAD
 export default Firestore;
+=======
+export default Firestore;
+>>>>>>> 430f639 (Minor changes)
