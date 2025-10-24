@@ -124,6 +124,15 @@ const LandingPage: React.FC = () => {
   setIsLoading(false);
 }
 
+  const EnableLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setLocationStatus('allowed');
+        },
+      );
+    }
   };
 
   const EnableLocation = () => {
@@ -204,6 +213,7 @@ const LandingPage: React.FC = () => {
                   )}
                 </div>
               </div>
+
               <div className="h-[400px]">
                 <RealMapComponent 
                   incidents={mockIncidents}
