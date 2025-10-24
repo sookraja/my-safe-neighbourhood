@@ -185,7 +185,7 @@ const LandingPage: React.FC = () => {
                 <div className="text-xs text-gray-600">Reports Today</div>
               </div>
             </div>
-            <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-10">
+            <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-[1001]">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">98%</div>
                 <div className="text-xs text-gray-600">Community Safe</div>
