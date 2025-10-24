@@ -101,21 +101,29 @@ const LandingPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await signIn(loginForm.email, loginForm.password);
-    } catch (err: any) {
-      console.error('Login error:', err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (err.code === 'auth/invalid-credential') {
-        setError('Invalid credentials');
-      } else {
-        setError('Failed to sign in. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+  await signIn(loginForm.email, loginForm.password);
+} catch (err: unknown) {
+  console.error('Login error:', err);
+
+    if (typeof err === 'object' && err !== null && 'code' in err) {
+    const errorCode = (err as { code?: string }).code;
+
+    if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
+      setError('Invalid email or password');
+    } else if (errorCode === 'auth/invalid-email') {
+      setError('Invalid email address');
+    } else if (errorCode === 'auth/invalid-credential') {
+      setError('Invalid credentials');
+    } else {
+      setError('Failed to sign in. Please try again.');
     }
+  } else {
+    setError('An unexpected error occurred.');
+  }
+} finally {
+  setIsLoading(false);
+}
+
   };
 
   const EnableLocation = () => {
