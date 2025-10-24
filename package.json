@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:web": "next build && next export",
+    "build:ios": "npm run build:web && npx cap copy ios && npx cap open ios",
+    "build:android": "npm run build:web && npx cap copy android && npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
