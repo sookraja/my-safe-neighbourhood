@@ -186,7 +186,6 @@ const LandingPage: React.FC = () => {
                   )}
                 </div>
               </div>
-
               <div className="h-[400px]">
                 <RealMapComponent 
                   incidents={mockIncidents}
