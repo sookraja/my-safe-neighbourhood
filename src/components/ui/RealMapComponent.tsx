@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Search } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
-
-
+import { Incident } from '@/firebase/incidents';
 import L from 'leaflet';
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -13,18 +12,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
-
-interface Incident {
-  id: number;
-  title: string;
-  type: string;
-  address: string;
-  dateTime: string;
-  reportedBy: string;
-  description: string;
-  lat: number;
-  lng: number;
-}
 
 interface RealMapComponentProps {
   incidents?: Incident[];
@@ -37,7 +24,7 @@ interface RealMapComponentProps {
   onLocationSelect?: (address: string, lat: number, lng: number) => void;
 }
 
-// handle map updates
+// Component to handle map updates
 const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
   
@@ -48,7 +35,7 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ cent
   return null;
 };
 
-// handles mouse clicks for the map 
+// handle map clicks for location selection
 const MapClickHandler: React.FC<{ onLocationSelect?: (lat: number, lng: number) => void }> = ({ onLocationSelect }) => {
   const map = useMap();
   
@@ -73,7 +60,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   incidents = [], 
   selectedIncident = null, 
   onIncidentSelect,
-  center = [40.7128, -74.0060], // New York Cord
+  center = [40.7128, -74.0060],
   zoom = 13,
   height = "400px",
   showSearch = false,
@@ -84,7 +71,11 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   const [mapZoom, setMapZoom] = useState(zoom);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
- 
+  React.useEffect(() => {
+    setMapCenter(center);
+    setMapZoom(zoom);
+  }, [center, zoom]);
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
@@ -100,7 +91,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
         const lng = parseFloat(result.lon);
         
         setMapCenter([lat, lng]);
-        setMapZoom(16); 
+        setMapZoom(16);
         
         if (onLocationSelect) {
           onLocationSelect(result.display_name, lat, lng);
@@ -140,14 +131,14 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   return (
     <div className="relative">
       {showSearch && (
-        <div className="absolute top-1 left-25 right-25 z-[1000]">
+        <div className="absolute top-4 left-4 right-4 z-[1000]">
           <div className="bg-white rounded-lg shadow-lg p-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search for an address or landmark"
+                  placeholder="Search for an address or landmark..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
                   style={{ color: '#000000' }}
                   value={searchQuery}
@@ -172,10 +163,10 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           className="rounded-lg"
-          zoomControl={true} 
-          scrollWheelZoom={true} 
-          doubleClickZoom={true} 
-          touchZoom={true} 
+          zoomControl={true}
+          scrollWheelZoom={true}
+          doubleClickZoom={true}
+          touchZoom={true}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -207,12 +198,16 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
                   <p className="text-xs text-gray-600 mt-1">{incident.type}</p>
                   <p className="text-xs text-gray-500">{incident.address}</p>
                   <p className="text-xs text-gray-500">{incident.dateTime}</p>
+                  {incident.upvotes !== undefined && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ {incident.upvotes} confirmed | ✗ {incident.downvotes} disputed
+                    </p>
+                  )}
                 </div>
               </Popup>
             </Marker>
           ))}
           
-          {/*location marker */}
           {selectedLocation && (
             <Marker position={selectedLocation}>
               <Popup>

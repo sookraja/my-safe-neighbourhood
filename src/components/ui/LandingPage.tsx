@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User } from 'lucide-react';
+import { User, MapPin } from 'lucide-react';
 import Navigation from './Navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Incident } from '@/firebase/incidents';
 
 const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ssr: false,
@@ -16,11 +17,9 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ),
 });
 
-
-// Mock data for incidents to be used later on if needed
-const mockIncidents = [
+const mockIncidents: Incident[] = [
   {
-    id: 1,
+    id: '1',
     title: "Suspicious Activity Near Park",
     type: "Suspicious Activity",
     address: "123 Main St",
@@ -28,10 +27,13 @@ const mockIncidents = [
     reportedBy: "John Doe",
     description: "Saw someone loitering around the playground area",
     lat: 40.7128,
-    lng: -74.0060
+    lng: -74.0060,
+    upvotes: 5,
+    downvotes: 1,
+    votedBy: []
   },
   {
-    id: 2,
+    id: '2',
     title: "Break-in Attempt",
     type: "Break-in",
     address: "456 Oak Ave",
@@ -39,7 +41,10 @@ const mockIncidents = [
     reportedBy: "Jane Smith",
     description: "Noticed someone trying to break into a car",
     lat: 40.7589,
-    lng: -73.9851
+    lng: -73.9851,
+    upvotes: 3,
+    downvotes: 0,
+    votedBy: []
   }
 ];
 
@@ -47,10 +52,43 @@ const LandingPage: React.FC = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
+  const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied' | 'unavailable'>('loading');
+  
   const { signIn, user } = useAuth();
   const router = useRouter();
 
-  // Redirect if already logged in
+  // Request location
+  useEffect(() => {
+    const requestLocation = () => {
+      if (!navigator.geolocation) {
+        setLocationStatus('unavailable');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setLocationStatus('allowed');
+        },
+        (error) => {
+          console.log('Location denied or error:', error);
+          setLocationStatus('denied');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    };
+
+    const timer = setTimeout(() => {
+      requestLocation();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (user) {
       router.push('/dashboard');
@@ -62,30 +100,33 @@ const LandingPage: React.FC = () => {
     setError('');
     setIsLoading(true);
 
-try {
-  await signIn(loginForm.email, loginForm.password);
-  // Router redirect via useEffect
-} catch (err: unknown) {
-  console.error('Login error:', err);
-
-  // Narrow unknown down to FirebaseAuthError-like object
-  if (err && typeof err === 'object' && 'code' in err) {
-    const errorObj = err as { code?: string };
-
-    if (errorObj.code === 'auth/user-not-found' || errorObj.code === 'auth/wrong-password') {
-      setError('Invalid email or password');
-    } else if (errorObj.code === 'auth/invalid-email') {
-      setError('Invalid email address');
-    } else {
-      setError('Failed to sign in. Please try again.');
+    try {
+      await signIn(loginForm.email, loginForm.password);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (err.code === 'auth/invalid-credential') {
+        setError('Invalid credentials');
+      } else {
+        setError('Failed to sign in. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } else {
-    setError('Failed to sign in. Please try again.');
-  }
-} finally {
-  setIsLoading(false);
-}
+  };
 
+  const EnableLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setLocationStatus('allowed');
+        },
+      );
+    }
   };
 
   return (
@@ -97,15 +138,36 @@ try {
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
-                <p className="text-sm text-gray-600">Real-time neighborhood safety updates</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
+                    <p className="text-sm text-gray-600">
+                      {locationStatus === 'loading' && 'Requesting location...'}
+                      {locationStatus === 'allowed' && 'Showing incidents in your area'}
+                      {locationStatus === 'denied' && 'Location access denied'}
+                      {locationStatus === 'unavailable' && 'Location not available'}
+                    </p>
+                  </div>
+                  {locationStatus === 'denied' && (
+                    <button
+                      onClick={EnableLocation}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                      title="Enable location to see incidents in your area"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Enable
+                    </button>
+                  )}
+                </div>
               </div>
+
               <div className="h-[400px]">
                 <RealMapComponent 
                   incidents={mockIncidents}
                   height="400px"
-                  center={[40.7128, -74.0060]}
-                  zoom={12}
+                  center={userLocation}
+                  zoom={locationStatus === 'allowed' ? 15 : 12}
+                  key={`${userLocation[0]}-${userLocation[1]}`}
                 />
               </div>
             </div>
