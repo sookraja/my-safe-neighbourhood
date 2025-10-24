@@ -6,8 +6,6 @@ import Firestore from "./postIncidents";
 
 const db = getFirestore(app);
 
-//const PAGE_SIZE = 10;
-
 type Incident = {
   location: string;
   incidentType: string;
@@ -15,7 +13,7 @@ type Incident = {
 };
 
 const Read = () => {
-    const [info, setInfo] = useState<Incident[]>([]);
+    const [info, setInfo] = useState<any[]>([]);
 
     // Start the fetch operation as soon as
     // the page loads
@@ -26,9 +24,9 @@ const Read = () => {
     // Fetch the required data using the get() method
     const Fetchdata = async () => {
         const querySnapshot = await getDocs(collection(db, "data"));
-        const newData: Incident[] = [];
+        const newData: any[] = [];
         querySnapshot.forEach((doc) => {
-            newData.push(doc.data() as Incident);
+            newData.push(doc.data() as any[]);
         });
         setInfo(newData);
     };
@@ -40,12 +38,11 @@ const Read = () => {
                 <h2>Incident Details</h2>
             </center>
 
-            {info.map((data, index) => (
+            {info.map((data) => (
                 <Frame
-                    key={index}
-                    location={data.location}
-                    incidentType={data.incidentType}
-                    description={data.description}
+                    location={data.CourseEnrolled}
+                    incidentType={data.Nane}
+                    description={data.Age}
                 />
             ))}
         </div>
