@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 absolute top-0 right-0">
+                  <div className="absolute top-0 right-0 flex items-center gap-3">
                     {locationStatus === 'denied' && (
                       <button
                         onClick={EnableLocation}
@@ -168,8 +168,9 @@ const LandingPage: React.FC = () => {
                         Enable
                       </button>
                     )}
-                    <div className="bg-white shadow-md rounded-lg px-3 py-2 text-gray-700 font-medium">
-                      Reports Today: 24
+                    <div className="bg-white rounded-lg shadow-lg p-4 w-32 text-center">
+                      <div className="text-2xl font-bold text-blue-600">24</div>
+                      <div className="text-xs text-gray-600">Reports Today</div>
                     </div>
                   </div>
                 </div>
