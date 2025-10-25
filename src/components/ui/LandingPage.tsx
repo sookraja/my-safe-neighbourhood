@@ -168,10 +168,10 @@ const LandingPage: React.FC = () => {
                         Enable
                       </button>
                     )}
-                    <div className="bg-white rounded-lg shadow-lg p-4 w-32 text-center">
+                    {/* <div className="bg-white rounded-lg shadow-lg p-4 w-32 text-center">
                       <div className="text-2xl font-bold text-blue-600">24</div>
                       <div className="text-xs text-gray-600">Reports Today</div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
