@@ -143,10 +143,11 @@ const LandingPage: React.FC = () => {
       
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col-reverse lg:grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-200px)]">
-          <div className="relative">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <div className="mb-4">
-              <div className="flex items-center justify-between relative">
+          <div className="relative w-full">
+            {/* Card */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full">
+              {/* Header */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
                   <p className="text-sm text-gray-600">
@@ -156,26 +157,23 @@ const LandingPage: React.FC = () => {
                     {locationStatus === 'unavailable' && 'Location not available'}
                   </p>
                 </div>
-              </div>
 
-              {/* Enable Location Button on the left */}
-              {locationStatus === 'denied' && (
-                <div className="flex justify-start mt-2">
+                {/* Enable Location Button */}
+                {locationStatus === 'denied' && (
                   <button
                     onClick={EnableLocation}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors sm:ml-4"
                     title="Enable location to see incidents in your area"
                   >
                     <MapPin className="w-4 h-4" />
                     Enable
                   </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-
-              <div className="h-[400px]">
-                <RealMapComponent 
+              {/* Map */}
+              <div className="h-[400px] w-full">
+                <RealMapComponent
                   incidents={mockIncidents}
                   height="400px"
                   center={userLocation}
@@ -185,17 +183,18 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Reports Today Box */}
             <div className="absolute -right-4 -top-4 bg-white rounded-lg shadow-lg p-4 w-32 z-10 text-center">
               <div className="text-2xl font-bold text-blue-600">24</div>
               <div className="text-xs text-gray-600">Reports Today</div>
             </div>
 
+            {/* Community Safe Box */}
             <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-[1001] text-center">
               <div className="text-2xl font-bold text-green-600">98%</div>
               <div className="text-xs text-gray-600">Community Safe</div>
             </div>
           </div>
-
 
           <div className="space-y-8">
             <div className="text-center lg:text-left">
