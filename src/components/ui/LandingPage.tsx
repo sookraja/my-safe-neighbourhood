@@ -157,25 +157,19 @@ const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="absolute top-0 right-0 flex items-center gap-3">
-                    {locationStatus === 'denied' && (
-                      <button
-                        onClick={EnableLocation}
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                        title="Enable location to see incidents in your area"
-                      >
-                        <MapPin className="w-4 h-4" />
-                        Enable
-                      </button>
-                    )}
-                    {/* <div className="bg-white rounded-lg shadow-lg p-4 w-32 text-center">
-                      <div className="text-2xl font-bold text-blue-600">24</div>
-                      <div className="text-xs text-gray-600">Reports Today</div>
-                    </div> */}
-                  </div>
+                  {/* Enable Location Button */}
+                  {locationStatus === 'denied' && (
+                    <button
+                      onClick={EnableLocation}
+                      className="absolute top-0 right-0 flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors z-20"
+                      title="Enable location to see incidents in your area"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Enable
+                    </button>
+                  )}
                 </div>
               </div>
-
 
               <div className="h-[400px]">
                 <RealMapComponent 
@@ -187,19 +181,18 @@ const LandingPage: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="absolute -right-4 -top-4 bg-white rounded-lg shadow-lg p-4 w-32 z-10">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">24</div>
-                <div className="text-xs text-gray-600">Reports Today</div>
-              </div>
+
+            <div className="absolute -right-4 -top-4 bg-white rounded-lg shadow-lg p-4 w-32 z-10 text-center">
+              <div className="text-2xl font-bold text-blue-600">24</div>
+              <div className="text-xs text-gray-600">Reports Today</div>
             </div>
-            <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-[1001]">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">98%</div>
-                <div className="text-xs text-gray-600">Community Safe</div>
-              </div>
+
+            <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-[1001] text-center">
+              <div className="text-2xl font-bold text-green-600">98%</div>
+              <div className="text-xs text-gray-600">Community Safe</div>
             </div>
           </div>
+
 
           <div className="space-y-8">
             <div className="text-center lg:text-left">
