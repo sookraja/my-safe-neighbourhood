@@ -74,25 +74,16 @@ const LandingPage: React.FC = () => {
           console.log('Location denied or error:', error);
           setLocationStatus('denied');
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     };
 
-    const timer = setTimeout(() => {
-      requestLocation();
-    }, 1000);
-
+    const timer = setTimeout(() => requestLocation(), 1000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (user) {
-      router.push('/dashboard');
-    }
+    if (user) router.push('/dashboard');
   }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -101,79 +92,76 @@ const LandingPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-  await signIn(loginForm.email, loginForm.password);
-} catch (err: unknown) {
-  console.error('Login error:', err);
-
-    if (typeof err === 'object' && err !== null && 'code' in err) {
-    const errorCode = (err as { code?: string }).code;
-
-    if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
-      setError('Invalid email or password');
-    } else if (errorCode === 'auth/invalid-email') {
-      setError('Invalid email address');
-    } else if (errorCode === 'auth/invalid-credential') {
-      setError('Invalid credentials');
-    } else {
-      setError('Failed to sign in. Please try again.');
+      await signIn(loginForm.email, loginForm.password);
+    } catch (err: unknown) {
+      console.error('Login error:', err);
+      if (typeof err === 'object' && err !== null && 'code' in err) {
+        const errorCode = (err as { code?: string }).code;
+        if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
+          setError('Invalid email or password');
+        } else if (errorCode === 'auth/invalid-email') {
+          setError('Invalid email address');
+        } else if (errorCode === 'auth/invalid-credential') {
+          setError('Invalid credentials');
+        } else {
+          setError('Failed to sign in. Please try again.');
+        }
+      } else {
+        setError('An unexpected error occurred.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } else {
-    setError('An unexpected error occurred.');
-  }
-} finally {
-  setIsLoading(false);
-}
-
   };
 
   const EnableLocation = () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-          setLocationStatus('allowed');
-        },
-      );
+      navigator.geolocation.getCurrentPosition((position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude]);
+        setLocationStatus('allowed');
+      });
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <Navigation />
-      
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col-reverse lg:grid lg:grid-cols-2 gap-8 items-center min-h-[calc(100vh-200px)]">
-          <div className="relative w-full">
-            {/* Card */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 w-full">
-              {/* Header */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
-                  <p className="text-sm text-gray-600">
-                    {locationStatus === 'loading' && 'Requesting location...'}
-                    {locationStatus === 'allowed' && 'Showing incidents in your area'}
-                    {locationStatus === 'denied' && 'Location access denied'}
-                    {locationStatus === 'unavailable' && 'Location not available'}
-                  </p>
-                </div>
 
-                {/* Enable Location Button */}
-                {locationStatus === 'denied' && (
-                  <button
-                    onClick={EnableLocation}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors sm:ml-4"
-                    title="Enable location to see incidents in your area"
-                  >
-                    <MapPin className="w-4 h-4" />
-                    Enable
-                  </button>
-                )}
+          {/* Left: Map Card */}
+          <div className="relative w-full">
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="mb-4">
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">Live Incident Map</h3>
+                    <p className="text-sm text-gray-600">
+                      {locationStatus === 'loading' && 'Requesting location...'}
+                      {locationStatus === 'allowed' && 'Showing incidents in your area'}
+                      {locationStatus === 'denied' && 'Location access denied'}
+                      {locationStatus === 'unavailable' && 'Location not available'}
+                    </p>
+                  </div>
+
+                  {/* Enable Location Button */}
+                  {locationStatus === 'denied' && (
+                    <div className="mt-2">
+                      <button
+                        onClick={EnableLocation}
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                        title="Enable location to see incidents in your area"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        Enable
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Map */}
-              <div className="h-[400px] w-full">
-                <RealMapComponent
+              <div className="h-[400px]">
+                <RealMapComponent 
                   incidents={mockIncidents}
                   height="400px"
                   center={userLocation}
@@ -183,20 +171,22 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Reports Today Box */}
+
+            {/* Reports Today */}
             <div className="absolute -right-4 -top-4 bg-white rounded-lg shadow-lg p-4 w-32 z-10 text-center">
               <div className="text-2xl font-bold text-blue-600">24</div>
               <div className="text-xs text-gray-600">Reports Today</div>
             </div>
 
-            {/* Community Safe Box */}
+            {/* Community Safe */}
             <div className="absolute -left-4 bottom-4 bg-white rounded-lg shadow-lg p-4 w-36 z-[1001] text-center">
               <div className="text-2xl font-bold text-green-600">98%</div>
               <div className="text-xs text-gray-600">Community Safe</div>
             </div>
           </div>
 
-          <div className="space-y-8">
+          {/* Right: Info & Login */}
+          <div className="space-y-8 w-full">
             <div className="text-center lg:text-left">
               <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
                 Report Incidents,<br />
@@ -214,13 +204,13 @@ const LandingPage: React.FC = () => {
                 <h2 className="text-2xl font-semibold text-gray-800">Welcome Back</h2>
                 <p className="text-gray-600 mt-2">Sign in to access your neighborhood dashboard</p>
               </div>
-              
+
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                   {error}
                 </div>
               )}
-              
+
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -228,30 +218,26 @@ const LandingPage: React.FC = () => {
                     type="email"
                     placeholder="Email"
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black placeholder-gray-400"
-                    style={{ color: '#000000' }}
                     value={loginForm.email}
                     onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
                     required
                     disabled={isLoading}
                   />
                 </div>
-                
+
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">
-                    🔒
-                  </div>
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400">🔒</div>
                   <input
                     type="password"
                     placeholder="Password"
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black placeholder-gray-400"
-                    style={{ color: '#000000' }}
                     value={loginForm.password}
                     onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
                     required
                     disabled={isLoading}
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -260,9 +246,9 @@ const LandingPage: React.FC = () => {
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </button>
               </form>
-              
+
               <div className="mt-6 text-center">
-                <p className="text-gray-600 mb-4">Don&#39;t have an account?</p>
+                <p className="text-gray-600 mb-4">Don't have an account?</p>
                 <button
                   onClick={() => router.push('/signup')}
                   className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium border-2 border-gray-200 hover:border-gray-300"
@@ -271,7 +257,7 @@ const LandingPage: React.FC = () => {
                   Create Account
                 </button>
               </div>
-              
+
               <div className="mt-6 text-center">
                 <a href="#" className="text-blue-600 hover:text-blue-700 text-sm">
                   Forgot your password?
@@ -279,6 +265,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mt-8">
               <div className="text-center p-4 bg-white/50 rounded-lg backdrop-blur-sm">
                 <div className="text-lg font-bold text-gray-800">1000+</div>
@@ -294,6 +281,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
