@@ -146,30 +146,33 @@ const LandingPage: React.FC = () => {
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-xl p-6">
               <div className="mb-4">
-                <div className="flex items-center justify-between relative">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
-                    <p className="text-sm text-gray-600">
-                      {locationStatus === 'loading' && 'Requesting location...'}
-                      {locationStatus === 'allowed' && 'Showing incidents in your area'}
-                      {locationStatus === 'denied' && 'Location access denied'}
-                      {locationStatus === 'unavailable' && 'Location not available'}
-                    </p>
-                  </div>
-
-                  {/* Enable Location Button */}
-                  {locationStatus === 'denied' && (
-                    <button
-                      onClick={EnableLocation}
-                      className="absolute top-0 right-0 flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors z-20"
-                      title="Enable location to see incidents in your area"
-                    >
-                      <MapPin className="w-4 h-4" />
-                      Enable
-                    </button>
-                  )}
+              <div className="flex items-center justify-between relative">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Live Incident Map</h3>
+                  <p className="text-sm text-gray-600">
+                    {locationStatus === 'loading' && 'Requesting location...'}
+                    {locationStatus === 'allowed' && 'Showing incidents in your area'}
+                    {locationStatus === 'denied' && 'Location access denied'}
+                    {locationStatus === 'unavailable' && 'Location not available'}
+                  </p>
                 </div>
               </div>
+
+              {/* Enable Location Button on the left */}
+              {locationStatus === 'denied' && (
+                <div className="flex justify-start mt-2">
+                  <button
+                    onClick={EnableLocation}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    title="Enable location to see incidents in your area"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Enable
+                  </button>
+                </div>
+              )}
+            </div>
+
 
               <div className="h-[400px]">
                 <RealMapComponent 
