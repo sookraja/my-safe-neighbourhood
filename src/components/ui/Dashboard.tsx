@@ -363,7 +363,7 @@ const Dashboard: React.FC = () => {
                 selectedIncident={selectedIncident}
                 onIncidentSelect={setSelectedIncident}
                 height="300px"
-                center={userLocation}  
+                center={selectedIncident ? [selectedIncident.lat, selectedIncident.lng] : userLocation} // select pin on map, otherwise show user loc
                 zoom={locationStatus === 'allowed' ? 15 : 12} 
               />
               <p className="text-xs text-gray-500 mt-2">

@@ -29,7 +29,7 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ cent
   const map = useMap();
   
   React.useEffect(() => {
-    map.setView(center, zoom);
+    map.setView(center, zoom, { animate: true }); // smooth pan to pin location
   }, [map, center, zoom]);
   
   return null;
