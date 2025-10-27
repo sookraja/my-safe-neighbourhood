@@ -7,6 +7,8 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Incident } from '@/firebase/incidents';
+import { db } from '@/firebase/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ssr: false,
@@ -54,7 +56,8 @@ const LandingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied' | 'unavailable'>('loading');
-  
+  const [incidents, setIncidents] = useState<Incident[]>(mockIncidents); 
+
   const { signIn, user } = useAuth();
   const router = useRouter();
 
@@ -81,6 +84,45 @@ const LandingPage: React.FC = () => {
     const timer = setTimeout(() => requestLocation(), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  {/* incidents nearby when location enabled */}
+  useEffect(() => {
+    const fetchIncidents = async () => {
+      try {
+        const incidentsRef = collection(db, 'Incident');
+        const snapshot = await getDocs(incidentsRef);
+        const fetchedIncidents: Incident[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Incident, 'id'>),
+        }));
+
+        console.log('Fetched incidents from Firestore:', fetchedIncidents);
+
+        {/* filter results to 25km */}
+        const filtered = fetchedIncidents.filter(incident => {
+        const distance = Math.sqrt(
+          Math.pow((incident.lat - userLocation[0]) * 111, 2) +
+          Math.pow((incident.lng - userLocation[1]) * 85, 2)
+        );
+        return distance <= 25;
+      });
+
+        console.log('User location:', userLocation);
+      console.log('Filtered incidents within 25 km:', filtered);
+
+        setIncidents(filtered.length ? filtered : mockIncidents);
+      } catch (err) {
+        console.error('Error fetching incidents:', err);
+        setIncidents(mockIncidents);
+      }
+    };
+
+    if (locationStatus === 'allowed' && userLocation) {
+      fetchIncidents();
+    } else {
+      setIncidents(mockIncidents);
+    }
+  }, [locationStatus, userLocation]);
 
   useEffect(() => {
     if (user) router.push('/dashboard');
@@ -162,7 +204,8 @@ const LandingPage: React.FC = () => {
 
               <div className="h-[400px]">
                 <RealMapComponent 
-                  incidents={mockIncidents}
+                  incidents={incidents}
+                  userLocation={locationStatus === 'allowed' ? userLocation : undefined}
                   height="400px"
                   center={userLocation}
                   zoom={locationStatus === 'allowed' ? 15 : 12}
@@ -170,7 +213,6 @@ const LandingPage: React.FC = () => {
                 />
               </div>
             </div>
-
 
             {/* Reports Today */}
             <div className="absolute -right-4 -top-4 bg-white rounded-lg shadow-lg p-4 w-32 z-10 text-center">

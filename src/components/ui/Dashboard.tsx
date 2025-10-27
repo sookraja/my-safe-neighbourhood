@@ -21,7 +21,7 @@ const distanceLimitForReports = (lat1: number, lon1: number, lat2: number, lon2:
  
   const latitudeDifference = lat2 - lat1;
   const longitudeDifference = lon2 - lon1;
-  const distance = Math.sqrt(latitudeDifference * latitudeDifference + longitudeDifference* longitudeDifference) * 111;
+  const distance = Math.sqrt(latitudeDifference * latitudeDifference + longitudeDifference * longitudeDifference) * 111;
   
   return distance;
 };

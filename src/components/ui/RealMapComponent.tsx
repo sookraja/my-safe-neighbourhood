@@ -22,6 +22,7 @@ interface RealMapComponentProps {
   height?: string;
   showSearch?: boolean;
   onLocationSelect?: (address: string, lat: number, lng: number) => void;
+  userLocation?: [number, number];
 }
 
 // Component to handle map updates
@@ -64,12 +65,15 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   zoom = 13,
   height = "400px",
   showSearch = false,
-  onLocationSelect
+  onLocationSelect,
+  userLocation
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const [mapZoom, setMapZoom] = useState(zoom);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+
+  
 
   React.useEffect(() => {
     setMapCenter(center);
@@ -172,6 +176,21 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
+          
+
+          {/* User location marker */}
+          {userLocation && (
+            <Marker position={userLocation}>
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-semibold text-sm">Your Location</h3>
+                  <p className="text-xs text-gray-500">
+                    {userLocation[0].toFixed(6)}, {userLocation[1].toFixed(6)}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
           
           <MapUpdater center={mapCenter} zoom={mapZoom} />
           
