@@ -72,9 +72,7 @@ const SignUpPage: React.FC = () => {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <h1 className="text-3xl font-bold text-blue-600">SafeNeighborhood</h1>
-              <div className="ml-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-blue-600 rounded-sm"></div>
-              </div>
+
             </div>
           </div>
           
