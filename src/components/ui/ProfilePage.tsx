@@ -124,43 +124,44 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex gap-2">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleSaveProfile}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Save className="w-4 h-4" />
-                      Save
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  </>
-                )}
-              </div>
+              <div className="flex gap-2 flex-wrap">
+  {isEditing ? (
+    <>
+      <button
+        onClick={handleSaveProfile}
+        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        <Save className="w-4 h-4" />
+        Save
+      </button>
+      <button
+        onClick={handleCancelEdit}
+        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+      >
+        <X className="w-4 h-4" />
+        Cancel
+      </button>
+    </>
+  ) : (
+    <>
+      <button
+        onClick={() => setIsEditing(true)}
+        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+      >
+        <Edit2 className="w-4 h-4" />
+        Edit Profile
+      </button>
+      <button
+        onClick={handleSignOut}
+        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+      >
+        <LogOut className="w-4 h-4" />
+        Sign Out
+      </button>
+    </>
+  )}
+</div>
+
             </div>
 
            
