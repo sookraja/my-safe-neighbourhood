@@ -41,7 +41,20 @@ const Navigation: React.FC = () => {
               >
                 About Us
               </button>
-              <span className="text-sm text-gray-600">{user.email}</span>
+              
+              <button
+                onClick={() => router.push('/profile')}
+                className="flex items-center gap-2 group"
+                title="View Profile"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold border-2 border-gray-200 group-hover:border-blue-500 transition-colors shadow-sm">
+                  {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="text-sm text-gray-600 group-hover:text-blue-600 transition-colors">
+                  {user.displayName || user.email}
+                </span>
+              </button>
+              
               <button
                 onClick={handleSignOut}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
