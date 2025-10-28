@@ -196,23 +196,34 @@ const ReportIncident: React.FC = () => {
                 </p>
               </div>
             
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Report'}
-                </button>
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={handleUpload}
                   disabled={isSubmitting}
-                  className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Photo
                 </button>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                    onClick={() => router.push('/dashboard')}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
               </div>
               
               <div className="border-t border-gray-200 pt-4">
