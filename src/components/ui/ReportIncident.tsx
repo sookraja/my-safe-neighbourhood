@@ -210,7 +210,7 @@ const ReportIncident: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                    className="flex-1 bg-red-50 text-red-600 px-6 py-3 rounded-lg hover:bg-red-100 transition-colors font-medium"
                     onClick={() => router.push('/dashboard')}
                   >
                     Cancel
