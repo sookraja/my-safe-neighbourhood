@@ -49,12 +49,13 @@ const mockIncidents: Incident[] = [
     votedBy: []
   }
 ];
+const mockLocation: [number, number] = [40.7128, -74.0060];
 
 const LandingPage: React.FC = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
+  const [userLocation, setUserLocation] = useState<[number, number]>(mockLocation);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied' | 'unavailable'>('loading');
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents); 
 
@@ -203,13 +204,13 @@ const LandingPage: React.FC = () => {
               </div>
 
               <div className="h-[400px]">
-                <RealMapComponent 
+                <RealMapComponent
                   incidents={incidents}
-                  userLocation={locationStatus === 'allowed' ? userLocation : undefined}
-                  height="400px"
+                  userLocation={locationStatus === 'allowed' ? userLocation : mockLocation}
                   center={userLocation}
                   zoom={locationStatus === 'allowed' ? 15 : 12}
-                  key={`${userLocation[0]}-${userLocation[1]}`}
+                  height="400px"
+                  showSearch={false}
                 />
               </div>
             </div>
