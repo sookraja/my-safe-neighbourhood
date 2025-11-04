@@ -1,3 +1,4 @@
+~~~{"variant":"standard","title":"RealMapComponent Fixed UserLocation","id":"52746"}
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -29,10 +30,8 @@ interface RealMapComponentProps {
   onLocationSelect?: (address: string, lat: number, lng: number) => void;
   userLocation?: [number, number];
 }
-const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({
-  center,
-  zoom,
-}) => {
+
+const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -43,10 +42,9 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({
   return null;
 };
 
-
-const MapClickHandler: React.FC<{
-  onLocationSelect?: (lat: number, lng: number) => void;
-}> = ({ onLocationSelect }) => {
+const MapClickHandler: React.FC<{ onLocationSelect?: (lat: number, lng: number) => void }> = ({
+  onLocationSelect,
+}) => {
   const map = useMap();
 
   useEffect(() => {
@@ -76,12 +74,25 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   showSearch = false,
   showCenterButton = true,
   onLocationSelect,
-  userLocation,
 }) => {
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const [mapZoom, setMapZoom] = useState(zoom);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+
+  // User location state with mock fallback
+  const mockLocation: [number, number] = [40.7128, -74.0060];
+  const [userLocation, setUserLocation] = useState<[number, number]>(mockLocation);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude]);
+      },
+      (err) => console.error(err)
+    );
+  }, []);
 
   // Sync props center/zoom with state
   useEffect(() => {
@@ -117,7 +128,6 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
     if (e.key === 'Enter') handleSearch();
   };
 
-  // Handle map click & reverse geocode
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
     if (onLocationSelect) {
@@ -175,11 +185,9 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           />
 
           {/* User location marker */}
-          {userLocation && (
-            <Marker position={userLocation}>
-              <Popup>Your Location</Popup>
-            </Marker>
-          )}
+          <Marker position={userLocation}>
+            <Popup>Your Location</Popup>
+          </Marker>
 
           {/* Map view updater */}
           <MapUpdater center={mapCenter} zoom={mapZoom} />
@@ -213,7 +221,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           {/* Selected location marker */}
           {selectedLocation && <Marker position={selectedLocation} />}
 
-          {/* Reusable CenterOnUserButton */}
+          {/* CenterOnUserButton */}
           {showCenterButton && <CenterOnUserButton userLocation={userLocation} />}
         </MapContainer>
       </div>
