@@ -28,38 +28,38 @@ interface RealMapComponentProps {
 // Component to handle map updates
 const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
-  
+
   React.useEffect(() => {
     map.setView(center, zoom, { animate: true }); // smooth pan to pin location
   }, [map, center, zoom]);
-  
+
   return null;
 };
 
 // handle map clicks for location selection
 const MapClickHandler: React.FC<{ onLocationSelect?: (lat: number, lng: number) => void }> = ({ onLocationSelect }) => {
   const map = useMap();
-  
+
   React.useEffect(() => {
     const handleClick = (e: L.LeafletMouseEvent) => {
       if (onLocationSelect) {
         onLocationSelect(e.latlng.lat, e.latlng.lng);
       }
     };
-    
+
     map.on('click', handleClick);
-    
+
     return () => {
       map.off('click', handleClick);
     };
   }, [map, onLocationSelect]);
-  
+
   return null;
 };
 
-const RealMapComponent: React.FC<RealMapComponentProps> = ({ 
-  incidents = [], 
-  selectedIncident = null, 
+const RealMapComponent: React.FC<RealMapComponentProps> = ({
+  incidents = [],
+  selectedIncident = null,
   onIncidentSelect,
   center = [40.7128, -74.0060],
   zoom = 13,
@@ -73,7 +73,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
   const [mapZoom, setMapZoom] = useState(zoom);
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
-  
+
 
   React.useEffect(() => {
     setMapCenter(center);
@@ -82,21 +82,21 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
-        
+
         setMapCenter([lat, lng]);
         setMapZoom(16);
-        
+
         if (onLocationSelect) {
           onLocationSelect(result.display_name, lat, lng);
         }
@@ -111,7 +111,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedLocation([lat, lng]);
-    
+
     // Reverse geocoding to get address
     if (onLocationSelect) {
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
@@ -160,7 +160,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           </div>
         </div>
       )}
-      
+
       <div style={{ height, width: '100%' }}>
         <MapContainer
           center={mapCenter}
@@ -176,7 +176,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          
+
 
           {/* User location marker */}
           {userLocation && (
@@ -191,16 +191,16 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
               </Popup>
             </Marker>
           )}
-          
+
           <MapUpdater center={mapCenter} zoom={mapZoom} />
-          
+
           {onLocationSelect && (
             <MapClickHandler onLocationSelect={handleMapClick} />
           )}
-          
+
           {/* Incident markers */}
           {incidents.map((incident) => (
-            <Marker 
+            <Marker
               key={incident.id}
               position={[incident.lat, incident.lng]}
               eventHandlers={{
@@ -217,6 +217,16 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
                   <p className="text-xs text-gray-600 mt-1">{incident.type}</p>
                   <p className="text-xs text-gray-500">{incident.address}</p>
                   <p className="text-xs text-gray-500">{incident.dateTime}</p>
+
+                  //displays image if available
+                  {incident.imageUrl && (
+                    <img
+                      src={incident.imageUrl}
+                      alt={incident.title}
+                      className="mt-2 w-full h-auto rounded-md"
+                    />
+                  )}
+
                   {incident.upvotes !== undefined && (
                     <p className="text-xs text-green-600 mt-1">
                       ✓ {incident.upvotes} confirmed | ✗ {incident.downvotes} disputed
@@ -226,7 +236,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
               </Popup>
             </Marker>
           ))}
-          
+
           {selectedLocation && (
             <Marker position={selectedLocation}>
               <Popup>

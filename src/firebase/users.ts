@@ -1,11 +1,13 @@
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
+export type UserRole = 'admin' | 'moderator' | 'user' | 'law_enforcement';
+
 export interface UserData {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: UserRole;
   password_hash?: string;
 }
 

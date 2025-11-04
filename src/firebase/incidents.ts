@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, doc, updateDoc, increment, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
+import { getUser } from "./users";
 
 export interface Incident {
   id?: string;
@@ -15,6 +16,7 @@ export interface Incident {
   upvotes: number;
   downvotes: number;
   votedBy?: string[];
+  imageUrl?: string; //needed for displaying images
 }
 
 // Add a new incident
@@ -87,27 +89,37 @@ export const getIncidents = async (): Promise<Incident[]> => {
 // Upvote logic
 export const upvoteIncident = async (incidentId: string, userId: string) => {
   try {
+    // Fetch the user role
+    const userData = await getUser(userId);
+    const userRole = userData?.role || 'user';
+
+    // Fetch the incident
     const incidentRef = doc(db, "Incident", incidentId);
     const incidentSnap = await getDoc(incidentRef);
-    
+
     if (!incidentSnap.exists()) {
       throw new Error("Incident not found");
     }
-    
+
     const data = incidentSnap.data();
     const votedBy = data.votedBy || [];
-    
-    // Checks if the user voted for the incident already
+
+    // Prevent double voting
     if (votedBy.includes(userId)) {
       throw new Error("You have already voted on this incident");
     }
-    
+
+    // Determine upvote increment
+    const incrementValue = userRole === "law_enforcement" ? 10 : 1;
+
     await updateDoc(incidentRef, {
-      upvotes: increment(1),
+      upvotes: increment(incrementValue),
       votedBy: [...votedBy, userId]
     });
+
+    console.log(`User ${userId} (${userRole}) upvoted incident ${incidentId} for +${incrementValue}`);
   } catch (error) {
-    console.error("Error upvoting incident: ", error);
+    console.error("Error upvoting incident:", error);
     throw error;
   }
 };
