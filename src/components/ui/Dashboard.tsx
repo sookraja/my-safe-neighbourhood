@@ -5,6 +5,7 @@ import { Search, Plus, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown } from 'lu
 import Navigation from './Navigation';
 import dynamic from 'next/dynamic';
 import { getIncidents, Incident, upvoteIncident, downvoteIncident, hasUserVoted, getCredibilityScore, getCredibilityPercentage } from '@/firebase/incidents';
+import { getUser, UserData } from '@/firebase/users';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -18,17 +19,19 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
 });
 
 const distanceLimitForReports = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
- 
   const latitudeDifference = lat2 - lat1;
   const longitudeDifference = lon2 - lon1;
   const distance = Math.sqrt(latitudeDifference * latitudeDifference + longitudeDifference * longitudeDifference) * 111;
-  
   return distance;
 };
 
+interface IncidentWithUser extends Incident {
+  reporterData?: UserData;
+}
+
 const Dashboard: React.FC = () => {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [incidents, setIncidents] = useState<IncidentWithUser[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<IncidentWithUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,11 +40,47 @@ const Dashboard: React.FC = () => {
   const router = useRouter();
   const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied'>('loading');
+  const [userCache, setUserCache] = useState<{[key: string]: UserData}>({});
+
+  // Function to fetch user data
+  const fetchUserData = async (userId: string): Promise<UserData | null> => {
+    // Check cache first
+    if (userCache[userId]) {
+      return userCache[userId];
+    }
+    
+    try {
+      const userData = await getUser(userId);
+      if (userData) {
+        // Update cache
+        setUserCache(prev => ({
+          ...prev,
+          [userId]: userData
+        }));
+        return userData;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
+  };
+
+  // Function to get display name for an incident
+  const getDisplayName = (incident: IncidentWithUser): string => {
+    if (incident.reporterData?.name) {
+      return incident.reporterData.name;
+    }
+    if (incident.reportedBy && incident.reportedBy.includes('@')) {
+      return incident.reportedBy.split('@')[0];
+    }
+    
+    return incident.reportedBy || 'Anonymous';
+  };
 
   useEffect(() => {
     loadIncidents();
   }, []);
-
 
   useEffect(() => {
     const requestLocation = () => {
@@ -74,7 +113,22 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const data = await getIncidents();
-      setIncidents(data);
+      
+      const incidentsWithUsers: IncidentWithUser[] = await Promise.all(
+        data.map(async (incident) => {
+          if (incident.reportedBy && !incident.reportedBy.includes('@')) {
+            const userData = await fetchUserData(incident.reportedBy);
+            return {
+              ...incident,
+              reporterData: userData || undefined
+            };
+          }
+          
+          return incident;
+        })
+      );
+      
+      setIncidents(incidentsWithUsers);
       setError('');
     } catch (err) {
       console.error('Error loading incidents:', err);
@@ -102,14 +156,14 @@ const Dashboard: React.FC = () => {
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
     } catch (err: unknown) {
-  if (err instanceof Error) {
-    alert(err.message);
-  } else {
-    alert('Failed to upvote incident');
-  }
-} finally {
-  setVotingIncidentId(null);
-}
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Failed to upvote incident');
+      }
+    } finally {
+      setVotingIncidentId(null);
+    }
   };
 
   const handleDownvote = async (incidentId: string, e: React.MouseEvent) => {
@@ -158,23 +212,23 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredIncidents = incidents.filter(incident => {
-  const matchesSearch = 
-    incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    incident.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    incident.reportedBy.toLowerCase().includes(searchTerm.toLowerCase());
-  
-  if (locationStatus === 'allowed') {
-    const distance = distanceLimitForReports(
-      userLocation[0],
-      userLocation[1],
-      incident.lat,
-      incident.lng  
-    );
-    return matchesSearch && distance <= 25; //this is will limit searches in a 25km radius
-  }
-  return matchesSearch;
-});
+    const matchesSearch = 
+      incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getDisplayName(incident).toLowerCase().includes(searchTerm.toLowerCase()); // Search by display name
+    
+    if (locationStatus === 'allowed') {
+      const distance = distanceLimitForReports(
+        userLocation[0],
+        userLocation[1],
+        incident.lat,
+        incident.lng  
+      );
+      return matchesSearch && distance <= 25;
+    }
+    return matchesSearch;
+  });
 
   const handleReportIncident = () => {
     router.push('/report');
@@ -280,7 +334,7 @@ const Dashboard: React.FC = () => {
                             <span className="font-medium">Date/Time:</span> {incident.dateTime || 'N/A'}
                           </div>
                           <div>
-                            <span className="font-medium">Reported By:</span> {incident.reportedBy || 'Anonymous'}
+                            <span className="font-medium">Reported By:</span> {getDisplayName(incident)}
                           </div>
                           <div className="md:col-span-2">
                             <span className="font-medium">Address:</span> {incident.address || 'Location not specified'}
@@ -363,7 +417,7 @@ const Dashboard: React.FC = () => {
                 selectedIncident={selectedIncident}
                 onIncidentSelect={setSelectedIncident}
                 height="300px"
-                center={selectedIncident ? [selectedIncident.lat, selectedIncident.lng] : userLocation} // select pin on map, otherwise show user loc
+                center={selectedIncident ? [selectedIncident.lat, selectedIncident.lng] : userLocation}
                 zoom={locationStatus === 'allowed' ? 15 : 12} 
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -422,7 +476,7 @@ const Dashboard: React.FC = () => {
                     <strong className="text-gray-900">Time:</strong> {selectedIncident.dateTime || 'Not specified'}
                   </div>
                   <div>
-                    <strong className="text-gray-900">Reported by:</strong> {selectedIncident.reportedBy || 'Anonymous'}
+                    <strong className="text-gray-900">Reported by:</strong> {getDisplayName(selectedIncident)}
                   </div>
                 </div>
                 <div className="border-t border-gray-200 pt-3">

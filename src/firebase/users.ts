@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
 export interface UserData {
@@ -37,6 +37,20 @@ export const getUser = async (userId: string): Promise<UserData | null> => {
     return null;
   } catch (error) {
     console.error("Error getting user: ", error);
+    throw error;
+  }
+};
+
+// Updates user data
+export const updateUser = async (userId: string, userData: Partial<UserData>): Promise<void> => {
+  try {
+    const userRef = doc(db, "Users", userId);
+    await updateDoc(userRef, {
+      ...userData,
+      updatedAt: new Date()
+    });
+  } catch (error) {
+    console.error("Error updating user: ", error);
     throw error;
   }
 };
