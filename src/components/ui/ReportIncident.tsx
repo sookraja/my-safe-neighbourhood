@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { addIncident } from '@/firebase/incidents';
 import { useRouter } from 'next/navigation';
+import { getUser } from '@/firebase/users';
 
 const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ssr: false,
@@ -93,7 +94,7 @@ const ReportIncident: React.FC = () => {
         description: form.description,
         lat: form.lat,
         lng: form.lng,
-        reportedBy: user.email || 'Anonymous',
+        reportedBy: user.uid, 
         dateTime,
         userId: user.uid,
       });
@@ -137,9 +138,10 @@ const ReportIncident: React.FC = () => {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Form */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+        {/* Responsive layout: map below form on mobile, side-by-side on desktop */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Form Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6 flex-1 order-1 lg:order-none">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title */}
               <div>
@@ -190,6 +192,26 @@ const ReportIncident: React.FC = () => {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Search on the map or enter the address manually</p>
+              </div>
+
+              {/* Map for mobile view */}
+              <div className="block lg:hidden">
+                <div className="bg-white rounded-lg shadow-sm p-4 mt-4">
+                  <h3 className="font-semibold text-gray-800 mb-3">Select Location</h3>
+                  <RealMapComponent
+                    incidents={[]}
+                    height="400px"
+                    showSearch={true}
+                    onLocationSelect={handleLocationSelect}
+                    center={userLocation}
+                    zoom={13}
+                    showCenterButton={true}
+                    userLocation={userLocation}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    The selected location will automatically fill in the location field above.
+                  </p>
+                </div>
               </div>
 
               {/* Description */}
@@ -258,8 +280,8 @@ const ReportIncident: React.FC = () => {
             </form>
           </div>
 
-          {/* Map */}
-          <div className="space-y-6">
+          {/* Desktop Map Section */}
+          <div className="hidden lg:block flex-1 space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Select Location</h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -281,7 +303,6 @@ const ReportIncident: React.FC = () => {
               </p>
             </div>
 
-            {/* Reporting Tips */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2">Reporting Tips</h4>
               <ul className="text-sm text-blue-800 space-y-1">

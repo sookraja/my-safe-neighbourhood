@@ -6,16 +6,18 @@ import Navigation from '@/components/ui/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getIncidents, Incident, getCredibilityScore } from '@/firebase/incidents';
+import { getUser, updateUser } from '@/firebase/users';
 
 const ProfilePage: React.FC = () => {
   const { user, logOut } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [userIncidents, setUserIncidents] = useState<Incident[]>([]);
   
   const [profileData, setProfileData] = useState({
-    displayName: user?.displayName || user?.email?.split('@')[0] || 'User',
+    displayName: user?.displayName || 'User',
     email: user?.email || '',
     joinDate: user?.metadata?.creationTime || new Date().toISOString(),
   });
@@ -31,12 +33,28 @@ const ProfilePage: React.FC = () => {
   }, [user, router]);
 
   const loadUserData = async () => {
+    if (!user?.uid) return; 
     try {
       setLoading(true);
       const incidents = await getIncidents();
       
+      const firestoreUser = await getUser(user.uid);
+      const username = firestoreUser?.name?.trim() || user?.email?.split('@')[0] || 'User';
+
+      setProfileData({
+        displayName: username,
+        email: user?.email || '',
+        joinDate: user?.metadata?.creationTime || new Date().toISOString(),
+      });
+
+      setEditData({
+        displayName: username,
+        email: user?.email || '',
+        joinDate: user?.metadata?.creationTime || new Date().toISOString(),
+      });
+
       const userReports = incidents.filter(
-        incident => incident.reportedBy === user?.email || incident.reportedBy === user?.displayName
+        incident => incident.reportedBy === user.uid || incident.reportedBy === user?.email
       );
       setUserIncidents(userReports);
     } catch (error) {
@@ -46,9 +64,44 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSaveProfile = () => {
-    setProfileData(editData);
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    if (!user?.uid) return;
+    
+    // Validate input
+    if (!editData.displayName.trim()) {
+      alert('Please enter a valid display name');
+      return;
+    }
+
+    if (editData.displayName.length > 30) {
+      alert('Display name must be less than 30 characters');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Update the user's name in Firestore
+      await updateUser(user.uid, {
+        name: editData.displayName.trim()
+      });
+
+      // Update local state
+      setProfileData(editData);
+      setIsEditing(false);
+
+      // reload to update components
+      window.location.reload();
+      
+      // Reload incidents to reflect name change in reports list
+      await loadUserData();
+      
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -99,13 +152,20 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      value={editData.displayName}
-                      onChange={(e) => setEditData({ ...editData, displayName: e.target.value })}
-                      className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none mb-2 px-2"
-                      style={{ color: '#000000' }}
-                    />
+                    <div className="mb-2">
+                      <input
+                        type="text"
+                        value={editData.displayName}
+                        onChange={(e) => setEditData({ ...editData, displayName: e.target.value })}
+                        className="text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none px-2 bg-transparent"
+                        style={{ color: '#000000' }}
+                        placeholder="Enter your display name"
+                        maxLength={30}
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        {editData.displayName.length}/30 characters
+                      </div>
+                    </div>
                   ) : (
                     <h1 className="text-3xl font-bold text-gray-900">{profileData.displayName}</h1>
                   )}
@@ -125,46 +185,46 @@ const ProfilePage: React.FC = () => {
               </div>
               
               <div className="flex gap-2 flex-wrap">
-  {isEditing ? (
-    <>
-      <button
-        onClick={handleSaveProfile}
-        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        <Save className="w-4 h-4" />
-        Save
-      </button>
-      <button
-        onClick={handleCancelEdit}
-        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-      >
-        <X className="w-4 h-4" />
-        Cancel
-      </button>
-    </>
-  ) : (
-    <>
-      <button
-        onClick={() => setIsEditing(true)}
-        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-      >
-        <Edit2 className="w-4 h-4" />
-        Edit Profile
-      </button>
-      <button
-        onClick={handleSignOut}
-        className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-      >
-        <LogOut className="w-4 h-4" />
-        Sign Out
-      </button>
-    </>
-  )}
-</div>
-
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save className="w-4 h-4" />
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-base bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
-           
             <div className="flex items-center gap-2 mt-4">
               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
                 credibilityRating >= 80 ? 'bg-green-100 text-green-800' :
@@ -184,7 +244,6 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-       
           <div className="grid md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-2">
@@ -219,6 +278,7 @@ const ProfilePage: React.FC = () => {
               <div className="text-sm text-gray-600">Credibility Score</div>
             </div>
           </div>
+
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Your Recent Reports</h2>
             

@@ -34,7 +34,7 @@ const SignUpPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-        await signUp(form.email, form.password);
+        const newUser = await signUp(form.email, form.password, form.username);
         router.push('/dashboard');
         } catch (err: unknown) {
             console.error('Signup error:', err);

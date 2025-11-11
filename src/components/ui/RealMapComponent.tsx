@@ -64,6 +64,13 @@ const MapClickHandler: React.FC<{ onLocationSelect?: (lat: number, lng: number) 
   return null;
 };
 
+const userLocationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
 const RealMapComponent: React.FC<RealMapComponentProps> = ({
   incidents = [],
   selectedIncident = null,
@@ -185,7 +192,7 @@ const RealMapComponent: React.FC<RealMapComponentProps> = ({
           />
 
           {/* User location marker */}
-          <Marker position={userLocation}>
+          <Marker position={userLocation} icon={userLocationIcon}>
             <Popup>Your Location</Popup>
           </Marker>
 

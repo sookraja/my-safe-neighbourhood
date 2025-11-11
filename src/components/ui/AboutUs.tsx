@@ -142,8 +142,8 @@ const AboutUs: React.FC = () => {
 
      
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Commitment</h2>
           <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Our Commitment</h2>
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Privacy & Security</h3>
@@ -188,6 +188,9 @@ const AboutUs: React.FC = () => {
           <p className="text-xl mb-8 opacity-90">
             Ready to help make your neighborhood safer? Join thousands of residents 
             who are already making a difference.
+          </p>
+          <p className="text-xl mb-8 opacity-90">
+            Questions? Contact us: sookraja@sheridancollege.ca
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
             <button

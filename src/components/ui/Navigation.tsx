@@ -1,14 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
+import { getUser, UserData } from '@/firebase/users'; 
 
 const Navigation: React.FC = () => {
   const { user, logOut } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user data from Firestore when user changes
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const firestoreUser = await getUser(user.uid);
+        setUserData(firestoreUser);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.uid]); // Refetch when user ID changes
 
   const handleSignOut = async () => {
     try {
@@ -22,6 +47,22 @@ const Navigation: React.FC = () => {
   const navigateAndClose = (path: string) => {
     router.push(path);
     setMenuOpen(false);
+  };
+
+  // Gets display name
+  const getDisplayName = (): string => {
+    if (userData?.name) {
+      return userData.name;
+    }
+    return user?.email || 'User';
+  };
+
+  // Gets display initial
+  const getDisplayInitial = (): string => {
+    if (userData?.name) {
+      return userData.name.charAt(0).toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() || 'U';
   };
 
   return (
@@ -56,10 +97,10 @@ const Navigation: React.FC = () => {
                 title="View Profile"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold border-2 border-gray-200 group-hover:border-blue-500 transition-colors shadow-sm">
-                  {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                  {getDisplayInitial()}
                 </div>
                 <span className="text-sm text-gray-600 group-hover:text-blue-600 transition-colors">
-                  {user.displayName || user.email}
+                  {loading ? 'Loading...' : getDisplayName()}
                 </span>
               </button>
               <button
@@ -71,18 +112,18 @@ const Navigation: React.FC = () => {
             </>
           ) : (
             <>
-            <button
+              <button
                 onClick={() => navigateAndClose('/about')}
                 className="text-gray-700 hover:text-blue-600 text-left transition-colors whitespace-nowrap"
               >
                 About Us
               </button>
               <button
-              onClick={() => navigateAndClose('/')}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Login
-            </button>
+                onClick={() => navigateAndClose('/')}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Login
+              </button>
             </>
           )}
         </div>
@@ -119,9 +160,11 @@ const Navigation: React.FC = () => {
                 title="View Profile"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold border-2 border-gray-200">
-                  {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                  {getDisplayInitial()}
                 </div>
-                <span className="text-sm text-gray-600">{user.displayName || user.email}</span>
+                <span className="text-sm text-gray-600">
+                  {loading ? 'Loading...' : getDisplayName()}
+                </span>
               </button>
               <button
                 onClick={() => { handleSignOut(); setMenuOpen(false); }}
@@ -132,18 +175,18 @@ const Navigation: React.FC = () => {
             </>
           ) : (
             <>
-            <button
+              <button
                 onClick={() => navigateAndClose('/about')}
                 className="text-gray-700 hover:text-blue-600 text-left"
               >
                 About Us
               </button>
               <button
-              onClick={() => navigateAndClose('/')}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Login
-            </button>
+                onClick={() => navigateAndClose('/')}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Login
+              </button>
             </>            
           )}
         </div>
