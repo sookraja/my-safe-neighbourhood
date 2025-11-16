@@ -166,14 +166,14 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredIncidents = incidents.filter(incident => {
-    // here im appling the search filter
+    // here im appling the search filter by using multiple fields
     const matchesSearch = 
       incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
       incident.reportedBy.toLowerCase().includes(searchTerm.toLowerCase());
     
-  
+      // checks selected type by making sure it matches the incident type
     const matchesType = selectedIncidentType === 'all' || incident.type === selectedIncidentType;
     
     // Applying 25km distance
@@ -187,7 +187,7 @@ const Dashboard: React.FC = () => {
       return matchesSearch && matchesType && distance <= 25;
     }
     
-    // If location not allowed, just use search and type filters
+    // If location is not avaialble, just use search and type filters
     return matchesSearch && matchesType;
   });
 

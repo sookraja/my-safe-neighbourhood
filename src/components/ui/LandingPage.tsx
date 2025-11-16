@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Incident } from '@/firebase/incidents';
+import { signInWithGoogle } from '@/firebase/googleAuth';
 
 const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
   ssr: false,
@@ -248,6 +249,13 @@ const LandingPage: React.FC = () => {
                 >
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </button>
+                <button
+                     onClick={() => signInWithGoogle()}
+                      className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-4 rounded-xl hover:bg-gray-50"
+>
+                      <img src="https://www.google.com/favicon.ico" className="w-5 h-5" />
+                       Sign in with Google
+                          </button>
               </form>
               
               <div className="mt-6 text-center">
