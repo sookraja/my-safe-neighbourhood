@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
           setUserLocation([position.coords.latitude, position.coords.longitude]);
           setLocationStatus('allowed');
         },
-        (error) => {
+        (error: unknown) => {
           console.log('Location denied or error:', error);
           setLocationStatus('denied');
         },
@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
       const data = await getIncidents();
       setIncidents(data);
       setError('');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error loading incidents:', err);
       setError('Failed to load incidents. Please refresh the page.');
     } finally {
@@ -118,8 +118,12 @@ const Dashboard: React.FC = () => {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to upvote incident');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message || 'Failed to upvote incident');
+      } else {
+        alert('Failed to upvote incident');
+      }
     } finally {
       setVotingIncidentId(null);
     }
@@ -142,8 +146,12 @@ const Dashboard: React.FC = () => {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: any) {
-      alert(err.message || 'Failed to downvote incident');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message || 'Failed to downvote incident');
+      } else {
+        alert('Failed to downvote incident');
+      }
     } finally {
       setVotingIncidentId(null);
     }
