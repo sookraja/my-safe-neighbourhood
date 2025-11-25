@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, doc, updateDoc, increment, getDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, getDocs, doc, updateDoc, increment, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
 
 export interface Incident {
@@ -80,6 +80,30 @@ export const getIncidents = async (): Promise<Incident[]> => {
     return incidents;
   } catch (error) {
     console.error("Error getting incidents: ", error);
+    throw error;
+  }
+};
+
+// Delete an incident
+export const deleteIncident = async (incidentId: string, userId: string): Promise<void> => {
+  try {
+    const incidentRef = doc(db, "Incident", incidentId);
+    const incidentSnap = await getDoc(incidentRef);
+    
+    if (!incidentSnap.exists()) {
+      throw new Error("Incident not found");
+    }
+    
+    const data = incidentSnap.data();
+    
+    // Verify the user owns this incident
+    if (data.userId !== userId) {
+      throw new Error("You can only delete your own incidents");
+    }
+    
+    await deleteDoc(incidentRef);
+  } catch (error) {
+    console.error("Error deleting incident: ", error);
     throw error;
   }
 };

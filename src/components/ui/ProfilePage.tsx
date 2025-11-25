@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Mail, MapPin, Calendar, Shield, TrendingUp, FileText, LogOut, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, MapPin, Calendar, Shield, TrendingUp, FileText, LogOut, Edit2, Save, X, Trash2 } from 'lucide-react';
 import Navigation from '@/components/ui/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getIncidents, Incident, getCredibilityScore } from '@/firebase/incidents';
+import { getIncidents, Incident, getCredibilityScore, deleteIncident } from '@/firebase/incidents';
 import { getUser, updateUser } from '@/firebase/users';
 
 const ProfilePage: React.FC = () => {
@@ -15,6 +15,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userIncidents, setUserIncidents] = useState<Incident[]>([]);
+  const [deletingIncidentId, setDeletingIncidentId] = useState<string | null>(null);
   
   const [profileData, setProfileData] = useState({
     displayName: user?.displayName || 'User',
@@ -53,8 +54,9 @@ const ProfilePage: React.FC = () => {
         joinDate: user?.metadata?.creationTime || new Date().toISOString(),
       });
 
+      // Filter incidents to only show user's own incidents
       const userReports = incidents.filter(
-        incident => incident.reportedBy === user.uid || incident.reportedBy === user?.email
+        incident => incident.userId === user.uid || incident.reportedBy === user?.email
       );
       setUserIncidents(userReports);
     } catch (error) {
@@ -63,6 +65,32 @@ const ProfilePage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleDeleteIncident = async (incidentId: string) => {
+    if (!user?.uid) return;
+    
+    if (!confirm('Are you sure you want to delete this incident? This action cannot be undone.')) {
+      return;
+    }
+
+  try {
+    setDeletingIncidentId(incidentId);
+    await deleteIncident(incidentId, user.uid);
+    
+    setUserIncidents(prev => prev.filter(incident => incident.id !== incidentId));
+    await loadUserData();
+    
+  } catch (error: unknown) {
+    console.error('Error deleting incident:', error);
+    if (error instanceof Error) {
+      alert(error.message || 'Failed to delete incident');
+    } else {
+      alert('Failed to delete incident');
+    }
+  } finally {
+    setDeletingIncidentId(null);
+  }
+};
 
   const handleSaveProfile = async () => {
     if (!user?.uid) return;
@@ -280,7 +308,12 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Recent Reports</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Your Recent Reports</h2>
+              <span className="text-sm text-gray-500">
+                {userIncidents.length} report{userIncidents.length !== 1 ? 's' : ''}
+              </span>
+            </div>
             
             {userIncidents.length === 0 ? (
               <div className="text-center py-12">
@@ -295,13 +328,12 @@ const ProfilePage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {userIncidents.slice(0, 5).map((incident) => {
+                {userIncidents.slice(0, 10).map((incident) => {
                   const score = getCredibilityScore(incident);
                   return (
                     <div
                       key={incident.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
-                      onClick={() => router.push('/dashboard')}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -345,13 +377,26 @@ const ProfilePage: React.FC = () => {
                           }`}>
                             Score: {score > 0 ? '+' : ''}{score}
                           </span>
+                          <button
+                            onClick={() => handleDeleteIncident(incident.id!)}
+                            disabled={deletingIncidentId === incident.id}
+                            className="flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete incident"
+                          >
+                            {deletingIncidentId === incident.id ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
                   );
                 })}
                 
-                {userIncidents.length > 5 && (
+                {userIncidents.length > 10 && (
                   <button
                     onClick={() => router.push('/dashboard')}
                     className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
