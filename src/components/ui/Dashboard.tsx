@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown } from 'lucide-react';
-import Navigation from './Navigation';
+import { Search, Plus, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown, Filter, MapPin } from 'lucide-react';
+import Navigation from '@/components/ui/Navigation';
 import dynamic from 'next/dynamic';
 import { getIncidents, Incident, upvoteIncident, downvoteIncident, hasUserVoted, getCredibilityScore, getCredibilityPercentage } from '@/firebase/incidents';
-import { getUser, UserData } from '@/firebase/users';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -19,64 +18,43 @@ const RealMapComponent = dynamic(() => import('./RealMapComponent'), {
 });
 
 const distanceLimitForReports = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const latitudeDifference = lat2 - lat1;
-  const longitudeDifference = lon2 - lon1;
-  const distance = Math.sqrt(latitudeDifference * latitudeDifference + longitudeDifference * longitudeDifference) * 111;
+  // Simple distance calculation (good enough for nearby incidents)
+  const latDiff = lat2 - lat1;
+  const lonDiff = lon2 - lon1;
+
+  // Roughly 111 km per degree
+  const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111;
+
   return distance;
 };
 
-interface IncidentWithUser extends Incident {
-  reporterData?: UserData;
-}
-
 const Dashboard: React.FC = () => {
-  const [incidents, setIncidents] = useState<IncidentWithUser[]>([]);
-  const [selectedIncident, setSelectedIncident] = useState<IncidentWithUser | null>(null);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [votingIncidentId, setVotingIncidentId] = useState<string | null>(null);
-  const { user } = useAuth();
-  const router = useRouter();
   const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'allowed' | 'denied'>('loading');
-  const [userCache, setUserCache] = useState<{[key: string]: UserData}>({});
+  const [radiusKm, setRadius] = useState(25);
 
-  // Function to fetch user data
-  const fetchUserData = async (userId: string): Promise<UserData | null> => {
-    // Check cache first
-    if (userCache[userId]) {
-      return userCache[userId];
-    }
-    
-    try {
-      const userData = await getUser(userId);
-      if (userData) {
-        // Update cache
-        setUserCache(prev => ({
-          ...prev,
-          [userId]: userData
-        }));
-        return userData;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      return null;
-    }
-  };
+  // Filter for incidents
+  const [selectedIncidentType, setSelectedIncidentType] = useState<string>('all');
 
-  // Function to get display name for an incident
-  const getDisplayName = (incident: IncidentWithUser): string => {
-    if (incident.reporterData?.name) {
-      return incident.reporterData.name;
-    }
-    if (incident.reportedBy && incident.reportedBy.includes('@')) {
-      return incident.reportedBy.split('@')[0];
-    }
-    
-    return incident.reportedBy || 'Anonymous';
-  };
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const incidentTypes = [
+    'all',
+    'Violence',
+    'Robbery',
+    'Theft',
+    'Break-in',
+    'Vandalism',
+    'Suspicious Activity',
+    'Other'
+  ];
 
   useEffect(() => {
     loadIncidents();
@@ -113,22 +91,7 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const data = await getIncidents();
-      
-      const incidentsWithUsers: IncidentWithUser[] = await Promise.all(
-        data.map(async (incident) => {
-          if (incident.reportedBy && !incident.reportedBy.includes('@')) {
-            const userData = await fetchUserData(incident.reportedBy);
-            return {
-              ...incident,
-              reporterData: userData || undefined
-            };
-          }
-          
-          return incident;
-        })
-      );
-      
-      setIncidents(incidentsWithUsers);
+      setIncidents(data);
       setError('');
     } catch (err) {
       console.error('Error loading incidents:', err);
@@ -139,8 +102,8 @@ const Dashboard: React.FC = () => {
   };
 
   const handleUpvote = async (incidentId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); 
-    
+    e.stopPropagation();
+
     if (!user) {
       alert('Please login to vote on incidents');
       return;
@@ -149,18 +112,14 @@ const Dashboard: React.FC = () => {
     setVotingIncidentId(incidentId);
     try {
       await upvoteIncident(incidentId, user.uid);
-      await loadIncidents(); 
-      
+      await loadIncidents();
+
       if (selectedIncident?.id === incidentId) {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert('Failed to upvote incident');
-      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to upvote incident');
     } finally {
       setVotingIncidentId(null);
     }
@@ -168,7 +127,7 @@ const Dashboard: React.FC = () => {
 
   const handleDownvote = async (incidentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!user) {
       alert('Please login to vote on incidents');
       return;
@@ -178,17 +137,13 @@ const Dashboard: React.FC = () => {
     try {
       await downvoteIncident(incidentId, user.uid);
       await loadIncidents();
-      
+
       if (selectedIncident?.id === incidentId) {
         const updatedIncident = incidents.find(i => i.id === incidentId);
         if (updatedIncident) setSelectedIncident(updatedIncident);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert('Failed to downvote incident');
-      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to downvote incident');
     } finally {
       setVotingIncidentId(null);
     }
@@ -203,7 +158,7 @@ const Dashboard: React.FC = () => {
   const getCredibilityBadge = (incident: Incident) => {
     const score = getCredibilityScore(incident);
     const percentage = getCredibilityPercentage(incident);
-    
+
     if (score >= 5) return { text: 'Verified', color: 'bg-green-100 text-green-800' };
     if (score >= 2) return { text: 'Credible', color: 'bg-blue-100 text-blue-800' };
     if (score >= 0) return { text: 'Unverified', color: 'bg-gray-100 text-gray-800' };
@@ -212,22 +167,29 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredIncidents = incidents.filter(incident => {
-    const matchesSearch = 
+    // here im appling the search filter by using multiple fields
+    const matchesSearch =
       incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getDisplayName(incident).toLowerCase().includes(searchTerm.toLowerCase()); // Search by display name
-    
+      incident.reportedBy.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // checks selected type by making sure it matches the incident type
+    const matchesType = selectedIncidentType === 'all' || incident.type === selectedIncidentType;
+
+    // Applying 25km distance
     if (locationStatus === 'allowed') {
       const distance = distanceLimitForReports(
         userLocation[0],
         userLocation[1],
         incident.lat,
-        incident.lng  
+        incident.lng
       );
-      return matchesSearch && distance <= 25;
+      return matchesSearch && matchesType && distance <= radiusKm; //Im switching this to dynamic because im implementing the range slider 
     }
-    return matchesSearch;
+
+    // If location is not avaialble, just use search and type filters
+    return matchesSearch && matchesType;
   });
 
   const handleReportIncident = () => {
@@ -251,7 +213,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="container mx-auto px-6 py-8">
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -272,7 +234,7 @@ const Dashboard: React.FC = () => {
                   Report Incident
                 </button>
               </div>
-              
+
               {filteredIncidents.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">
@@ -281,9 +243,9 @@ const Dashboard: React.FC = () => {
                     </svg>
                   </div>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm ? 'No incidents found matching your search.' : 'No incidents reported yet.'}
+                    {searchTerm || selectedIncidentType !== 'all' ? 'No incidents found matching your filters.' : 'No incidents reported yet.'}
                   </p>
-                  {!searchTerm && (
+                  {!searchTerm && selectedIncidentType === 'all' && (
                     <button
                       onClick={handleReportIncident}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -298,80 +260,88 @@ const Dashboard: React.FC = () => {
                     const score = getCredibilityScore(incident);
                     const badge = getCredibilityBadge(incident);
                     const userHasVoted = user ? hasUserVoted(incident, user.uid) : false;
-                    
+
+                    // Calculate distance from the incident if user location is available
+                    //look at line 291 for where its being applied
+                    let distance: number | null = null;
+                    if (locationStatus === 'allowed') {
+                      distance = distanceLimitForReports(
+                        userLocation[0],
+                        userLocation[1],
+                        incident.lat,
+                        incident.lng
+                      );
+                    }
+
                     return (
                       <div
                         key={incident.id}
-                        className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                          selectedIncident?.id === incident.id ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500' : 'hover:bg-gray-50'
-                        }`}
                         onClick={() => setSelectedIncident(incident)}
+                        className={`border rounded-lg p-4 cursor-pointer transition-all ${selectedIncident?.id === incident.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                          }`}
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-lg text-gray-900">
-                                {incident.title}
-                              </h3>
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <h3 className="font-semibold text-gray-900">{incident.title}</h3>
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.color}`}>
                                 {badge.text}
                               </span>
+                              {distance !== null && (
+                                <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                  <MapPin className="w-3 h-3" />
+                                  {distance.toFixed(1)} km away
+                                </span>
+                              )}
                             </div>
-                            <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                              incident.type === 'Violence' || incident.type === 'Robbery' ? 'bg-red-100 text-red-800' :
+                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mb-2 ${incident.type === 'Violence' || incident.type === 'Robbery' ? 'bg-red-100 text-red-800' :
                               incident.type === 'Theft' || incident.type === 'Break-in' ? 'bg-orange-100 text-orange-800' :
-                              incident.type === 'Vandalism' ? 'bg-yellow-100 text-yellow-800' :
-                              incident.type === 'Suspicious Activity' ? 'bg-purple-100 text-purple-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
+                                incident.type === 'Vandalism' ? 'bg-yellow-100 text-yellow-800' :
+                                  incident.type === 'Suspicious Activity' ? 'bg-purple-100 text-purple-800' :
+                                    'bg-blue-100 text-blue-800'
+                              }`}>
                               {incident.type}
                             </span>
-                          </div>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
-                          <div>
-                            <span className="font-medium">Date/Time:</span> {incident.dateTime || 'N/A'}
-                          </div>
-                          <div>
-                            <span className="font-medium">Reported By:</span> {getDisplayName(incident)}
-                          </div>
-                          <div className="md:col-span-2">
-                            <span className="font-medium">Address:</span> {incident.address || 'Location not specified'}
+                            <p className="text-sm text-gray-600 mb-2">{incident.description}</p>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                              <span>📍 {incident.address}</span>
+                              <span>🕐 {incident.dateTime}</span>
+                              <span>👤 {incident.reportedBy}</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                          <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={(e) => handleUpvote(incident.id!, e)}
                               disabled={userHasVoted || votingIncidentId === incident.id}
-                              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${
-                                userHasVoted 
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-green-50 text-green-700 hover:bg-green-100'
-                              }`}
+                              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${userHasVoted
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                }`}
                               title={userHasVoted ? "You've already voted" : "Confirm this incident occurred"}
                             >
                               <ThumbsUp className="w-4 h-4" />
                               <span className="font-medium">{incident.upvotes || 0}</span>
                             </button>
-                            
+
                             <button
                               onClick={(e) => handleDownvote(incident.id!, e)}
                               disabled={userHasVoted || votingIncidentId === incident.id}
-                              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${
-                                userHasVoted 
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-red-50 text-red-700 hover:bg-red-100'
-                              }`}
+                              className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-colors ${userHasVoted
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                }`}
                               title={userHasVoted ? "You've already voted" : "Report this as false"}
                             >
                               <ThumbsDown className="w-4 h-4" />
                               <span className="font-medium">{incident.downvotes || 0}</span>
                             </button>
                           </div>
-                          
+
                           <div className={`flex items-center gap-1 ${getCredibilityColor(score)}`}>
                             {score > 0 ? (
                               <TrendingUp className="w-4 h-4" />
@@ -391,8 +361,9 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="space-y-6">
+            {/* Search Box */}
             <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="relative">
+              <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
@@ -403,32 +374,87 @@ const Dashboard: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {searchTerm && (
-                <p className="text-xs text-gray-500 mt-2">
+
+              {/*Radius Slider */}
+              {locationStatus === 'allowed' && (
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Radius</span>
+                    <span className="text-lg font-bold text-blue-600">{radiusKm} km</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="75"
+                    step="5"
+                    value={radiusKm}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="w-full"
+                    style={{
+                      background: `linear-gradient(to right, #2563eb ${((radiusKm - 5) / 70) * 100}%, #e5e7eb ${((radiusKm - 5) / 70) * 100}%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>5 km</span>
+                    <span>75 km</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Incident Type Filter */}
+              <div className="mb-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Filter className="w-4 h-4" />
+                  Filter by Type
+                </label>
+                <select
+                  value={selectedIncidentType}
+                  onChange={(e) => setSelectedIncidentType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  style={{ color: '#000000' }}
+                >
+                  {incidentTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type === 'all' ? 'All Types' : type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(searchTerm || selectedIncidentType !== 'all') && (
+                <p className="text-xs text-gray-500">
                   Found {filteredIncidents.length} incident{filteredIncidents.length !== 1 ? 's' : ''}
+                </p>
+              )}
+
+              {locationStatus === 'allowed' && !searchTerm && selectedIncidentType === 'all' && (
+                <p className="text-xs text-blue-600 mt-2">
+                  📍 Showing incidents within 25 km of your location
                 </p>
               )}
             </div>
 
+            {/* Map */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Incident Locations</h3>
-              <RealMapComponent 
-                incidents={filteredIncidents} 
+              <RealMapComponent
+                incidents={filteredIncidents}
                 selectedIncident={selectedIncident}
                 onIncidentSelect={setSelectedIncident}
                 height="300px"
-                center={selectedIncident ? [selectedIncident.lat, selectedIncident.lng] : userLocation}
-                zoom={locationStatus === 'allowed' ? 15 : 12} 
+                center={userLocation}
+                zoom={locationStatus === 'allowed' ? 15 : 12}
               />
               <p className="text-xs text-gray-500 mt-2">
-                Click on markers to view details
+                Click on markers to view incident details
               </p>
             </div>
 
+            {/* Incident Details */}
             {selectedIncident ? (
               <div className="bg-white rounded-lg shadow-sm p-4">
                 <h3 className="font-bold text-lg mb-3 text-gray-900">Incident Details</h3>
-                
+
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">Community Verification</span>
@@ -437,14 +463,13 @@ const Dashboard: React.FC = () => {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        getCredibilityScore(selectedIncident) >= 5 ? 'bg-green-500' :
+                    <div
+                      className={`h-2 rounded-full ${getCredibilityScore(selectedIncident) >= 5 ? 'bg-green-500' :
                         getCredibilityScore(selectedIncident) >= 0 ? 'bg-blue-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ 
-                        width: `${Math.min(Math.abs(getCredibilityScore(selectedIncident)) * 10, 100)}%` 
+                          'bg-red-500'
+                        }`}
+                      style={{
+                        width: `${Math.min(Math.abs(getCredibilityScore(selectedIncident)) * 10, 100)}%`
                       }}
                     ></div>
                   </div>
@@ -455,13 +480,12 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="mb-3">
-                  <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${
-                    selectedIncident.type === 'Violence' || selectedIncident.type === 'Robbery' ? 'bg-red-100 text-red-800' :
+                  <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${selectedIncident.type === 'Violence' || selectedIncident.type === 'Robbery' ? 'bg-red-100 text-red-800' :
                     selectedIncident.type === 'Theft' || selectedIncident.type === 'Break-in' ? 'bg-orange-100 text-orange-800' :
-                    selectedIncident.type === 'Vandalism' ? 'bg-yellow-100 text-yellow-800' :
-                    selectedIncident.type === 'Suspicious Activity' ? 'bg-purple-100 text-purple-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
+                      selectedIncident.type === 'Vandalism' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedIncident.type === 'Suspicious Activity' ? 'bg-purple-100 text-purple-800' :
+                          'bg-blue-100 text-blue-800'
+                    }`}>
                     {selectedIncident.type}
                   </span>
                 </div>
@@ -476,8 +500,20 @@ const Dashboard: React.FC = () => {
                     <strong className="text-gray-900">Time:</strong> {selectedIncident.dateTime || 'Not specified'}
                   </div>
                   <div>
-                    <strong className="text-gray-900">Reported by:</strong> {getDisplayName(selectedIncident)}
+                    <strong className="text-gray-900">Reported by:</strong> {selectedIncident.reportedBy || 'Anonymous'}
                   </div>
+                  {locationStatus === 'allowed' && (
+                    <div>
+                      <strong className="text-gray-900">Distance:</strong> {
+                        distanceLimitForReports(
+                          userLocation[0],
+                          userLocation[1],
+                          selectedIncident.lat,
+                          selectedIncident.lng
+                        ).toFixed(1)
+                      } km from you
+                    </div>
+                  )}
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <strong className="text-gray-900 text-sm block mb-2">Description:</strong>
@@ -497,23 +533,26 @@ const Dashboard: React.FC = () => {
               </div>
             )}
 
+            {/* Quick Stats */}
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Quick Stats</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Incidents:</span>
-                  <span className="font-semibold text-gray-900">{incidents.length}</span>
+                  <span className="text-gray-600">
+                    {locationStatus === 'allowed' ? 'Nearby Incidents:' : 'Total Incidents:'}
+                  </span>
+                  <span className="font-semibold text-gray-900">{filteredIncidents.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Verified:</span>
                   <span className="font-semibold text-green-600">
-                    {incidents.filter(i => getCredibilityScore(i) >= 5).length}
+                    {filteredIncidents.filter(i => getCredibilityScore(i) >= 5).length}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Disputed:</span>
                   <span className="font-semibold text-red-600">
-                    {incidents.filter(i => getCredibilityScore(i) < 0).length}
+                    {filteredIncidents.filter(i => getCredibilityScore(i) < 0).length}
                   </span>
                 </div>
               </div>
