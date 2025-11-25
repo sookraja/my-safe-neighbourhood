@@ -8,21 +8,16 @@ const provider = new GoogleAuthProvider();
 export const signInWithGoogle = async () => {
   const result = await signInWithPopup(auth, provider);
   const user = result.user;
-
-  const userDocRef = doc(db, 'users', user.uid);
+  const userDocRef = doc(db, 'Users', user.uid);
+  //im basically checking if the user already exists 
   const userDoc = await getDoc(userDocRef);
 
   if (!userDoc.exists()) {
     await setDoc(userDocRef, {
-      uid: user.uid,
-      email: user.email,
-      name: user.displayName,
-      photoURL: user.photoURL,
-      role: 'user',
-      emailNotifications: false,
-      latitude: null,
-      longitude: null,
-      createdAt: new Date().toISOString(),
+      email: user.email,                      
+      id: user.uid,                          
+      name: user.displayName,                
+      role: 'user', 
     });
   }
 
