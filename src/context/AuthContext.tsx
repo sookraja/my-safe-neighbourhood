@@ -7,7 +7,7 @@ import { signUp as firebaseSignUp, signIn as firebaseSignIn, logOut as firebaseL
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
 }
@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return unsubscribe;
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    await firebaseSignUp(email, password);
+  const signUp = async (email: string, password: string, username: string) => {
+    await firebaseSignUp(email, password, username);
   };
 
   const signIn = async (email: string, password: string) => {
