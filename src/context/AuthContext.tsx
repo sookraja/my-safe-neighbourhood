@@ -3,11 +3,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { signUp as firebaseSignUp, signIn as firebaseSignIn, logOut as firebaseLogOut, auth } from '@/firebase/firebaseAuth';
+import { addUser } from '@/firebase/users';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+<<<<<<< HEAD
   signUp: (email: string, password: string, username: string) => Promise<void>;
+=======
+  signUp: (email: string, password: string, name?: string) => Promise<void>;
+>>>>>>> 8e8d74c8509af777a9efc4fb710b5e7a879a866a
   signIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
 }
@@ -35,8 +40,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return unsubscribe;
   }, []);
 
+<<<<<<< HEAD
   const signUp = async (email: string, password: string, username: string) => {
     await firebaseSignUp(email, password, username);
+=======
+  const signUp = async (email: string, password: string, name?: string) => {
+    const userCredential = await firebaseSignUp(email, password);
+    
+    // Add user to Firestore Users collection
+    if (userCredential) {
+      await addUser(userCredential.uid, {
+        id: userCredential.uid,
+        email: email,
+        name: name || email.split('@')[0],
+        role: 'user'
+      });
+    }
+>>>>>>> 8e8d74c8509af777a9efc4fb710b5e7a879a866a
   };
 
   const signIn = async (email: string, password: string) => {
